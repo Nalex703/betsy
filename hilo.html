@@ -200,26 +200,7 @@
         }
 
         /* Dev Mode Specific Styles */
-        .dev-mode-toggle-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background-color: #c05621; /* Orange-red for dev mode */
-            color: white;
-            padding: 10px 15px;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-size: 1em;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            z-index: 100;
-        }
-
-        .dev-mode-toggle-button:hover {
-            background-color: #9c4221;
-            transform: translateY(-2px);
-        }
+        /* Removed .dev-mode-toggle-button as it's no longer a direct button */
 
         .dev-controls {
             background-color: #2d3748;
@@ -276,10 +257,59 @@
             font-weight: bold;
             color: #68d391; /* Light green for odds */
         }
+
+        /* New styles for dev code input */
+        #devCodeInputContainer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 101;
+            display: flex; /* Use flexbox for input and button alignment */
+            align-items: center;
+            gap: 5px;
+        }
+
+        #devCodeInputContainer input {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 5px;
+            padding: 8px 12px;
+            color: #e2e8f0;
+            font-size: 1em;
+            width: 150px;
+        }
+
+        #devCodeInputContainer button {
+            background-color: #c05621; /* Orange-red for dev code submit button */
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease;
+        }
+
+        #devCodeInputContainer button:hover {
+            background-color: #9c4221;
+        }
+
+        #devHint {
+            position: absolute;
+            top: 70px; /* Position below where the input will appear */
+            left: 20px;
+            color: #e2e8f0;
+            font-size: 0.9em;
+            z-index: 100;
+        }
     </style>
 </head>
 <body>
-    <button id="devModeToggle" class="dev-mode-toggle-button">Toggle Dev Mode</button>
+    <div id="devCodeInputContainer" class="hidden">
+        <input type="password" id="devCodeInput" placeholder="Enter Dev Code">
+        <button id="submitDevCodeBtn">Go</button>
+    </div>
+    <p id="devHint">Press 'D' to activate dev code input.</p>
 
     <div class="coin-display" onclick="window.location.href='Buy_coins.html'">
         Coins: <span id="coinCount"></span>
@@ -345,7 +375,6 @@
         const placeBetBtn = document.getElementById('placeBetBtn');
 
         // Dev Mode Elements
-        const devModeToggle = document.getElementById('devModeToggle');
         const devControls = document.getElementById('devControls');
         const addCoinsBtn = document.getElementById('addCoinsBtn');
         const revealNextCardToggle = document.getElementById('revealNextCardToggle');
@@ -355,6 +384,13 @@
         const setNextCardBtn = document.getElementById('setNextCardBtn');
         const oddsDisplay = document.getElementById('oddsDisplay');
 
+        // New Dev Mode Code elements
+        const devCodeInputContainer = document.getElementById('devCodeInputContainer');
+        const devCodeInput = document.getElementById('devCodeInput');
+        const submitDevCodeBtn = document.getElementById('submitDevCodeBtn');
+        const devHint = document.getElementById('devHint');
+
+        const DEV_CODE = "DevMode"; // The secret code
 
         let devModeActive = false;
         let forceWin = false;
@@ -426,7 +462,6 @@
             oddsDisplay.textContent = `Odds: Higher: ${higherProb}% | Lower: ${lowerProb}% | Tie: ${tieProb}%`;
         }
 
-
         function startGame() {
             createDeck();
             shuffleDeck();
@@ -448,234 +483,4 @@
             // Deal the first card
             if (deck.length > 0) {
                 currentCard = deck.pop();
-                currentCardEl.textContent = `${currentCard.rank}${currentCard.suit}`;
-                currentCardEl.style.color = (currentCard.suit === '♥️' || currentCard.suit === '♦️') ? 'red' : 'black';
-            } else {
-                messageEl.textContent = "Something went wrong, no cards in deck!";
-            }
-            updateCoinDisplay();
-            if (devModeActive) { // Only calculate odds if dev mode is active
-                calculateOdds();
-            } else {
-                oddsDisplay.textContent = "Odds: Hidden (Dev Mode Off)";
-            }
-        }
-
-        function revealNextCard() {
-            if (deck.length === 0) {
-                messageEl.textContent = "Ran out of cards! Click 'Play Again' to shuffle.";
-                guessHigherBtn.disabled = true;
-                guessLowerBtn.disabled = true;
-                newGameBtn.classList.remove('hidden');
-                return false;
-            }
-
-            // Handle forced next card
-            if (forcedNextCardRank) {
-                const desiredRank = forcedNextCardRank.toUpperCase();
-                const cardIndex = deck.findIndex(card => card.rank === desiredRank);
-
-                if (cardIndex !== -1) {
-                    const cardToForce = deck.splice(cardIndex, 1)[0]; // Remove card
-                    nextCard = cardToForce; // Set as next card
-                    messageEl.textContent += ` (Forced card: ${desiredRank})`; // Add a dev message
-                } else {
-                    messageEl.textContent += ` (Dev Error: Forced rank '${desiredRank}' not found! Drawing random.)`;
-                    nextCard = deck.pop(); // Draw random if forced card not found
-                }
-                forcedNextCardRank = null; // Reset flag after use
-            } else {
-                nextCard = deck.pop();
-            }
-
-            nextCardEl.textContent = `${nextCard.rank}${nextCard.suit}`;
-            nextCardEl.style.color = (nextCard.suit === '♥️' || nextCard.suit === '♦️') ? 'red' : 'black';
-
-            // Only reveal if dev mode is active or 'always reveal' is checked
-            if (devModeActive && revealNextCardToggle.checked) {
-                nextCardEl.classList.remove('hidden');
-            } else {
-                nextCardEl.classList.add('hidden'); // Ensure it's hidden normally
-            }
-            return true;
-        }
-
-        function checkGuess(guess) {
-            if (!revealNextCard()) return;
-
-            let isCorrect;
-            
-            // Apply force win/lose if active
-            if (forceWin) {
-                isCorrect = true;
-                messageEl.textContent = 'Dev Mode: FORCED WIN! 🎉';
-            } else if (forceLose) {
-                isCorrect = false;
-                messageEl.textContent = 'Dev Mode: FORCED LOSE! 🥺';
-            } else if (nextCard.value === currentCard.value) {
-                messageEl.textContent = `It's a tie (${currentCard.rank})! No win. 🤷‍♀️`;
-                isCorrect = false; // Treat ties as not winning for coin logic
-            } else if (guess === 'higher') {
-                isCorrect = nextCard.value > currentCard.value;
-            } else {
-                isCorrect = nextCard.value < currentCard.value;
-            }
-
-            if (nextCard.value !== currentCard.value) { // Don't override tie message
-                if (isCorrect) {
-                    messageEl.textContent = 'You got it! You win! 🎉';
-                    messageEl.classList.add('correct');
-                    coins += currentBet;
-                } else if (!forceWin && !forceLose) { // Prevent showing normal lose message if forced
-                    messageEl.textContent = 'Nope, wrong guess. You lose! 🥺';
-                    messageEl.classList.add('incorrect');
-                    coins -= currentBet;
-                }
-            } else { // Handle tie styling explicitly
-                messageEl.classList.add('incorrect'); // Use incorrect styling for ties
-            }
-            
-            updateCoinDisplay();
-            guessHigherBtn.disabled = true;
-            guessLowerBtn.disabled = true;
-            newGameBtn.classList.remove('hidden');
-            placeBetBtn.disabled = true;
-            betInput.disabled = true;
-
-            // Reset force flags after the guess
-            forceWin = false;
-            forceLose = false;
-        }
-
-        // Dev Mode Functions
-        function toggleDevMode() {
-            devModeActive = !devModeActive;
-            if (devModeActive) {
-                devControls.classList.remove('hidden');
-                calculateOdds(); // Calculate odds immediately when dev mode opens
-                if (revealNextCardToggle.checked && nextCard) {
-                    nextCardEl.classList.remove('hidden'); // Show if already revealed and checkbox checked
-                }
-            } else {
-                devControls.classList.add('hidden');
-                oddsDisplay.textContent = "Odds: Hidden (Dev Mode Off)";
-                if (nextCardEl) { // Ensure nextCardEl exists before trying to hide
-                    nextCardEl.classList.add('hidden'); // Hide next card when dev mode off
-                }
-            }
-        }
-
-        // Event Listeners
-        guessHigherBtn.addEventListener('click', () => checkGuess('higher'));
-        guessLowerBtn.addEventListener('click', () => checkGuess('lower'));
-        newGameBtn.addEventListener('click', startGame);
-
-        placeBetBtn.addEventListener('click', () => {
-            let bet = parseInt(betInput.value);
-            if (isNaN(bet) || bet <= 0) {
-                messageEl.textContent = "Please enter a valid bet amount.";
-                messageEl.classList.add('incorrect');
-                return;
-            }
-            if (bet > coins) {
-                messageEl.textContent = "You don't have enough coins for that bet!";
-                messageEl.classList.add('incorrect');
-                return;
-            }
-            currentBet = bet;
-            currentBetDisplay.textContent = currentBet;
-            messageEl.textContent = `Bet set to ${currentBet}. Make your guess!`;
-            messageEl.classList.remove('incorrect');
-            messageEl.classList.add('correct');
-            guessHigherBtn.disabled = false;
-            guessLowerBtn.disabled = false;
-            placeBetBtn.disabled = true;
-            betInput.disabled = true;
-            if (devModeActive) { // Update odds after bet is placed
-                calculateOdds();
-            }
-        });
-
-        betInput.addEventListener('input', () => {
-            placeBetBtn.disabled = false;
-        });
-
-        // Dev Mode Event Listeners
-        devModeToggle.addEventListener('click', toggleDevMode);
-
-        addCoinsBtn.addEventListener('click', () => {
-            coins += 1000;
-            updateCoinDisplay();
-            messageEl.textContent = "1000 coins added!";
-            messageEl.classList.remove('incorrect');
-            messageEl.classList.add('correct');
-        });
-
-        revealNextCardToggle.addEventListener('change', () => {
-            if (devModeActive) {
-                if (revealNextCardToggle.checked && nextCard) { // Check if nextCard exists to show
-                    nextCardEl.classList.remove('hidden');
-                } else if (nextCard) { // Hide if unchecked
-                    nextCardEl.classList.add('hidden');
-                }
-                // Update odds if current card is present, as visibility might influence debug process
-                if (currentCard) {
-                    calculateOdds();
-                }
-            }
-        });
-
-
-        forceWinBtn.addEventListener('click', () => {
-            forceWin = true;
-            forceLose = false; // Ensure only one is active
-            messageEl.textContent = "Next guess will be a FORCED WIN!";
-            messageEl.classList.remove('incorrect');
-            messageEl.classList.add('correct');
-        });
-
-        forceLoseBtn.addEventListener('click', () => {
-            forceLose = true;
-            forceWin = false; // Ensure only one is active
-            messageEl.textContent = "Next guess will be a FORCED LOSE!";
-            messageEl.classList.remove('correct');
-            messageEl.classList.add('incorrect');
-        });
-
-        setNextCardBtn.addEventListener('click', () => {
-            const desiredRank = forceNextCardInput.value.toUpperCase();
-            if (!ranks.includes(desiredRank) && desiredRank !== '10') { // Validate rank input
-                messageEl.textContent = `Invalid rank: ${desiredRank}. Please use A, 2-10, J, Q, K.`;
-                messageEl.classList.remove('correct');
-                messageEl.classList.add('incorrect');
-                return;
-            }
-
-            // Find and move the desired card to be the next one drawn
-            const cardIndex = deck.findIndex(card => card.rank === desiredRank);
-
-            if (cardIndex !== -1) {
-                const cardToForce = deck.splice(cardIndex, 1)[0]; // Remove card from its current position
-                deck.push(cardToForce); // Add it to the end so it's popped next
-                forcedNextCardRank = desiredRank; // Flag that we set it
-                messageEl.textContent = `Next card will be a ${desiredRank}!`;
-                messageEl.classList.remove('incorrect');
-                messageEl.classList.add('correct');
-            } else {
-                messageEl.textContent = `Rank ${desiredRank} not found in remaining deck. Drawing random.`;
-                messageEl.classList.remove('correct');
-                messageEl.classList.add('incorrect');
-                forcedNextCardRank = null; // Reset if not found
-            }
-            forceNextCardInput.value = ''; // Clear input
-            if (devModeActive) { // Recalculate odds after deck manipulation
-                calculateOdds();
-            }
-        });
-
-
-        // Start the game when the page loads
-        startGame();
-    </script>
-</body>
-</html>
+                currentCardEl.textContent = `${currentCard
