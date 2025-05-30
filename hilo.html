@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Low Card Game</title>
+    <style>
+        /* CSS goes here (inside the <style> tags) */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+            color: #333;
+        }
+
+        .game-container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #1a202c;
+            margin-bottom: 30px;
+        }
+
+        .card-display {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            width: 120px;
+            height: 180px;
+            border: 3px solid #333;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3.5em;
+            font-weight: bold;
+            background-color: #eee;
+            color: #333;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease-out;
+        }
+
+        .card:hover:not(.hidden) {
+            transform: translateY(-5px); /* Little lift on hover */
+        }
+
+        .card.hidden {
+            background-color: #555; /* Back of the card */
+            color: #555;
+            cursor: default;
+        }
+
+        .buttons {
+            margin-bottom: 25px;
+        }
+
+        .buttons button {
+            padding: 12px 25px;
+            font-size: 1.3em;
+            margin: 0 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .buttons button:hover:not(:disabled) {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .buttons button:active:not(:disabled) {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .buttons button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #message {
+            font-size: 1.4em;
+            font-weight: bold;
+            min-height: 1.5em; /* Prevent layout shift */
+            margin-bottom: 25px;
+        }
+
+        #message.correct {
+            color: #28a745; /* Green for win */
+        }
+
+        #message.incorrect {
+            color: #dc3545; /* Red for lose */
+        }
+
+        #newGame {
+            background-color: #28a745;
+        }
+
+        #newGame:hover:not(:disabled) {
+            background-color: #218838;
+        }
+
+        .hidden {
+            display: none;
+        }
+        .coin-display {
+            position: absolute; /* Changed from fixed to absolute for better flow */
+            top: 20px;
+            right: 20px;
+            font-size: 1.2em;
+            background-color: #333;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="coin-display" onclick="window.location.href='Buy_coins.html'">
+        Coins: <span id="coinCount"></span>
+    </div>
+
+    <div class="game-container">
+        <h1>High-Low Card Game</h1>
+        <div class="card-display">
+            <div id="currentCard" class="card"></div>
+            <div id="nextCard" class="card hidden">?</div>
+        </div>
+        <div class="buttons">
+            <button id="guessHigher">Higher</button>
+            <button id="guessLower">Lower</button>
+        </div>
+        <p id="message"></p>
+        <button id="newGame" class="hidden">Play Again</button>
+        <div class="betting-area">
+            <p>Current Bet: <span id="currentBetDisplay">10</span></p>
+            <input type="number" id="betInput" value="10" min="1">
+            <button id="placeBetBtn">Place Bet</button>
+        </div>
+    </div>
+
+    <script>
+        const suits = ['♠️', '♥️', '♦️', '♣️'];
+        const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+        let deck = [];
+        let currentCard = null;
+        let nextCard = null;
+        let coins = parseInt(localStorage.getItem('coins') || '1000'); // Load coins from localStorage
+        let currentBet = 10; // Default bet
+
+        const currentCardEl = document.getElementById('currentCard');
+        const nextCardEl = document.getElementById('nextCard');
+        const guessHigherBtn = document.getElementById('guessHigher');
+        const guessLowerBtn = document.getElementById('guessLower');
+        const messageEl = document.getElementById('message');
+        const newGameBtn = document.getElementById('newGame');
+        const coinCountDisplay = document.getElementById('coinCount'); // New element for coin display
+        const betInput = document.getElementById('betInput');
+        const currentBetDisplay = document.getElementById('currentBetDisplay');
+        const placeBetBtn = document.getElementById('placeBetBtn');
+
+        function updateCoinDisplay() {
+            coinCountDisplay.textContent = coins;
+            localStorage.setItem('coins', coins); // Save coins to localStorage
+        }
+
+        function createDeck() {
+            deck = [];
+            for (let suit of suits) {
+                for (let i = 0; i < ranks.length; i++) {
+                    let value = i + 1;
+                    if (ranks[i] === 'A') value = 1; 
+                    if (ranks[i] === 'J') value = 11;
+                    if (ranks[i] === 'Q') value = 12;
+                    if (ranks[i] === 'K') value = 13;
+
+                    deck.push({
+                        rank: ranks[i],
+                        value: value,
+                        suit: suit
+                    });
+                }
+            }
+        }
+
+        function shuffleDeck() {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]]; 
+            }
+        }
+
+        function startGame() {
+            createDeck();
+            shuffleDeck();
+            messageEl.textContent = '';
+            messageEl.className = ''; 
+            nextCardEl.classList.add('hidden'); 
+            nextCardEl.textContent = '?'; 
+            guessHigherBtn.disabled = false;
+            guessLowerBtn.disabled = false;
+            newGameBtn.classList.add('hidden'); 
+            placeBetBtn.disabled = false; // Enable place bet button
+
+            // Deal the first card
+            if (deck.length > 0) {
+                currentCard = deck.pop();
+                currentCardEl.textContent = `${currentCard.rank}${currentCard.suit}`;
+                currentCardEl.style.color = (currentCard.suit === '♥️' || currentCard.suit === '♦️') ? 'red' : 'black';
+            } else {
+                messageEl.textContent = "Something went wrong, no cards in deck!";
+            }
+            updateCoinDisplay(); // Update coin display at start of game
+        }
+
+        function revealNextCard() {
+            if (deck.length === 0) {
+                messageEl.textContent = "Ran out of cards! Click 'Play Again' to shuffle.";
+                guessHigherBtn.disabled = true;
+                guessLowerBtn.disabled = true;
+                newGameBtn.classList.remove('hidden');
+                return false;
+            }
+            nextCard = deck.pop();
+            nextCardEl.textContent = `${nextCard.rank}${nextCard.suit}`;
+            nextCardEl.style.color = (nextCard.suit === '♥️' || nextCard.suit === '♦️') ? 'red' : 'black';
+            nextCardEl.classList.remove('hidden'); 
+            return true;
+        }
+
+        function checkGuess(guess) {
+            if (!revealNextCard()) return;
+
+            let isCorrect;
+            
+            if (guess === 'higher') {
+                isCorrect = nextCard.value > currentCard.value;
+            } else { 
+                isCorrect = nextCard.value < currentCard.value;
+            }
+
+            if (nextCard.value === currentCard.value) {
+                messageEl.textContent = `It's a tie (${currentCard.rank})! No win. 🤷‍♀️`;
+                messageEl.classList.add('incorrect'); 
+            } else if (isCorrect) {
+                messageEl.textContent = 'You got it! You win! 🎉';
+                messageEl.classList.add('correct');
+                coins += currentBet; // Add bet to coins on win
+            } else {
+                messageEl.textContent = 'Nope, wrong guess. You lose! 🥺';
+                messageEl.classList.add('incorrect');
+                coins -= currentBet; // Deduct bet from coins on loss
+            }
+
+            updateCoinDisplay(); // Update coin display after each guess
+            guessHigherBtn.disabled = true;
+            guessLowerBtn.disabled = true;
+            newGameBtn.classList.remove('hidden'); 
+            placeBetBtn.disabled = true; // Disable place bet after guess
+        }
+
+        // Event Listeners
+        guessHigherBtn.addEventListener('click', () => checkGuess('higher'));
+        guessLowerBtn.addEventListener('click', () => checkGuess('lower'));
+        newGameBtn.addEventListener('click', startGame);
+
+        placeBetBtn.addEventListener('click', () => {
+            let bet = parseInt(betInput.value);
+            if (isNaN(bet) || bet <= 0) {
+                messageEl.textContent = "Please enter a valid bet amount.";
+                messageEl.classList.add('incorrect');
+                return;
+            }
+            if (bet > coins) {
+                messageEl.textContent = "You don't have enough coins for that bet!";
+                messageEl.classList.add('incorrect');
+                return;
+            }
+            currentBet = bet;
+            currentBetDisplay.textContent = currentBet;
+            messageEl.textContent = `Bet set to ${currentBet}. Make your guess!`;
+            messageEl.classList.remove('incorrect');
+            messageEl.classList.add('correct'); // Acknowledge successful bet
+            // After placing the bet, prepare for the next card draw.
+            // In High-Low, you draw the *next* card immediately after guessing.
+            // So we don't need to disable guess buttons here, but we do need to make sure
+            // currentCard is ready for comparison.
+
+            // This is a bit tricky. If we want a "place bet" phase, then the game logic
+            // needs to be slightly re-ordered. For now, let's assume 'place bet' only updates
+            // the `currentBet` variable for the *next* round.
+
+            // Let's modify the startGame to handle the initial card draw and betting.
+            // For simplicity, let's make the "Place Bet" button just update the bet value,
+            // and the game start happens when 'Higher' or 'Lower' is clicked after setting the bet.
+            // OR, a 'Start Round' button after setting bet.
+
+            // Given the current structure, the most straightforward is to make the "Place Bet" button
+            // only update `currentBet` and then enable the guess buttons if they aren't already.
+            // The actual coin deduction/win happens in `checkGuess`.
+            guessHigherBtn.disabled = false;
+            guessLowerBtn.disabled = false;
+            placeBetBtn.disabled = true; // Disable place bet after setting it for the round
+            betInput.disabled = true; // Disable input too
+        });
+
+        betInput.addEventListener('input', () => {
+            // Re-enable place bet button if input changes
+            placeBetBtn.disabled = false;
+        });
+
+
+        // Start the game when the page loads
+        startGame();
+    </script>
+</body>
+</html>
