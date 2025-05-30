@@ -9,31 +9,32 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             display: flex;
-            flex-direction: column; /* Changed to column to center the game container better */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             background-color: #1a202c; /* Dark background from mines.html */
             margin: 0;
             color: #e2e8f0; /* Light text color for dark background */
-            padding: 20px; /* Add padding for overall spacing */
-            box-sizing: border-box; /* Include padding in element's total width and height */
+            padding: 20px;
+            box-sizing: border-box;
         }
 
         .game-container {
             background-color: #2d3748; /* Darker grey from mines.html */
             padding: 40px;
             border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.4); /* Stronger shadow from mines.html */
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
             text-align: center;
             width: 90%;
             max-width: 500px;
+            margin-bottom: 20px; /* Add margin to separate from dev controls */
         }
 
         h1 {
             color: #4299e1; /* Blue from mines.html */
             margin-bottom: 30px;
-            font-size: 2.5em; /* Larger font size */
+            font-size: 2.5em;
         }
 
         .coin-display {
@@ -45,9 +46,9 @@
             color: white;
             padding: 10px 15px;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3); /* Stronger shadow */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             cursor: pointer;
-            z-index: 100; /* Ensure it's on top */
+            z-index: 100;
         }
 
         .card-display {
@@ -60,18 +61,19 @@
         .card {
             width: 120px;
             height: 180px;
-            border: 3px solid #636b77; /* Softer border color */
+            border: 3px solid #636b77;
             border-radius: 10px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 3.5em;
+            font-size: 3em; /* Adjusted font size */
             font-weight: bold;
             background-color: #cbd5e0; /* Lighter color for card front */
             color: #2d3748; /* Darker text for contrast */
-            box-shadow: 3px 3px 8px rgba(0,0,0,0.3); /* Stronger shadow */
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.3);
             transition: transform 0.3s ease-out;
-            user-select: none; /* Prevent text selection */
+            user-select: none;
+            overflow: hidden; /* Prevent text overflow */
         }
 
         .card:hover:not(.hidden) {
@@ -86,9 +88,9 @@
 
         .buttons {
             margin-bottom: 25px;
-            display: flex; /* Use flex for buttons */
+            display: flex;
             justify-content: center;
-            gap: 15px; /* Gap between buttons */
+            gap: 15px;
         }
 
         .buttons button {
@@ -98,11 +100,11 @@
             padding: 12px 25px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 1.1em; /* Smaller font for consistency */
+            font-size: 1.1em;
             transition: background-color 0.2s ease, transform 0.1s ease;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2); /* Shadow from mines.html */
-            flex-grow: 1; /* Allow buttons to grow */
-            max-width: 150px; /* Limit button width */
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            flex-grow: 1;
+            max-width: 150px;
         }
 
         .buttons button:hover:not(:disabled) {
@@ -151,15 +153,15 @@
         .betting-area {
             margin-top: 25px;
             padding: 15px;
-            background-color: #4a5568; /* Consistent with mines controls background */
+            background-color: #4a5568;
             border-radius: 8px;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-            display: flex; /* Use flexbox for layout */
-            flex-wrap: wrap; /* Allow wrapping */
+            display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             align-items: center;
-            gap: 15px; /* Spacing between elements */
-            color: #e2e8f0; /* Light text color */
+            gap: 15px;
+            color: #e2e8f0;
         }
 
         .betting-area p {
@@ -167,12 +169,14 @@
             font-size: 1.1em;
         }
 
-        .betting-area input[type="number"] {
-            background-color: #2d3748; /* Dark background for input */
-            border: 1px solid #4a5568; /* Border from mines.html */
+        .betting-area input[type="number"],
+        .betting-area select,
+        .dev-controls input[type="text"] { /* Added style for text input in dev controls */
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
             border-radius: 5px;
             padding: 8px 12px;
-            color: #e2e8f0; /* Light text color */
+            color: #e2e8f0;
             font-size: 1em;
             width: 80px; /* Fixed width */
             text-align: center;
@@ -194,9 +198,89 @@
             background-color: #b7791f; /* Darker orange on hover */
             transform: translateY(-2px);
         }
+
+        /* Dev Mode Specific Styles */
+        .dev-mode-toggle-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #c05621; /* Orange-red for dev mode */
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            z-index: 100;
+        }
+
+        .dev-mode-toggle-button:hover {
+            background-color: #9c4221;
+            transform: translateY(-2px);
+        }
+
+        .dev-controls {
+            background-color: #2d3748;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            margin-top: 20px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dev-controls button {
+            background-color: #4299e1; /* Blue for dev buttons */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .dev-controls button:hover {
+            background-color: #3182ce;
+            transform: translateY(-2px);
+        }
+
+        .dev-controls .checkbox-control,
+        .dev-controls .input-control { /* Combined styles for consistency */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 5px;
+            font-size: 1.1em;
+            flex-wrap: wrap; /* Allow wrapping for smaller screens */
+        }
+
+        .dev-controls .checkbox-control input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #4299e1; /* Blue accent for checkbox */
+        }
+        
+        #oddsDisplay {
+            margin-top: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #68d391; /* Light green for odds */
+        }
     </style>
 </head>
 <body>
+    <button id="devModeToggle" class="dev-mode-toggle-button">Toggle Dev Mode</button>
+
     <div class="coin-display" onclick="window.location.href='Buy_coins.html'">
         Coins: <span id="coinCount"></span>
     </div>
@@ -220,6 +304,25 @@
         </div>
     </div>
 
+    <div id="devControls" class="dev-controls hidden">
+        <h2>Dev Mode Controls</h2>
+        <button id="addCoinsBtn">Add 1000 Coins</button>
+        <div class="checkbox-control">
+            <input type="checkbox" id="revealNextCardToggle">
+            <label for="revealNextCardToggle">Always Reveal Next Card</label>
+        </div>
+        <button id="forceWinBtn">Force Next Win</button>
+        <button id="forceLoseBtn">Force Next Lose</button>
+        
+        <div class="input-control">
+            <label for="forceNextCardInput">Force Next Card (Rank):</label>
+            <input type="text" id="forceNextCardInput" placeholder="e.g., A, K, 7" maxlength="2" style="width: 100px; text-transform: uppercase;">
+            <button id="setNextCardBtn">Set Card</button>
+        </div>
+
+        <p id="oddsDisplay">Odds: Calculating...</p>
+    </div>
+
     <script>
         const suits = ['♠️', '♥️', '♦️', '♣️'];
         const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -227,8 +330,8 @@
         let deck = [];
         let currentCard = null;
         let nextCard = null;
-        let coins = parseInt(localStorage.getItem('coins') || '1000'); // Load coins from localStorage
-        let currentBet = 10; // Default bet
+        let coins = parseInt(localStorage.getItem('coins') || '1000');
+        let currentBet = 10;
 
         const currentCardEl = document.getElementById('currentCard');
         const nextCardEl = document.getElementById('nextCard');
@@ -236,14 +339,31 @@
         const guessLowerBtn = document.getElementById('guessLower');
         const messageEl = document.getElementById('message');
         const newGameBtn = document.getElementById('newGame');
-        const coinCountDisplay = document.getElementById('coinCount'); // New element for coin display
+        const coinCountDisplay = document.getElementById('coinCount');
         const betInput = document.getElementById('betInput');
         const currentBetDisplay = document.getElementById('currentBetDisplay');
         const placeBetBtn = document.getElementById('placeBetBtn');
 
+        // Dev Mode Elements
+        const devModeToggle = document.getElementById('devModeToggle');
+        const devControls = document.getElementById('devControls');
+        const addCoinsBtn = document.getElementById('addCoinsBtn');
+        const revealNextCardToggle = document.getElementById('revealNextCardToggle');
+        const forceWinBtn = document.getElementById('forceWinBtn');
+        const forceLoseBtn = document.getElementById('forceLoseBtn');
+        const forceNextCardInput = document.getElementById('forceNextCardInput');
+        const setNextCardBtn = document.getElementById('setNextCardBtn');
+        const oddsDisplay = document.getElementById('oddsDisplay');
+
+
+        let devModeActive = false;
+        let forceWin = false;
+        let forceLose = false;
+        let forcedNextCardRank = null; // Stores the rank for forced next card
+
         function updateCoinDisplay() {
             coinCountDisplay.textContent = coins;
-            localStorage.setItem('coins', coins); // Save coins to localStorage
+            localStorage.setItem('coins', coins);
         }
 
         function createDeck() {
@@ -251,7 +371,7 @@
             for (let suit of suits) {
                 for (let i = 0; i < ranks.length; i++) {
                     let value = i + 1;
-                    if (ranks[i] === 'A') value = 1; 
+                    if (ranks[i] === 'A') value = 1;
                     if (ranks[i] === 'J') value = 11;
                     if (ranks[i] === 'Q') value = 12;
                     if (ranks[i] === 'K') value = 13;
@@ -268,23 +388,62 @@
         function shuffleDeck() {
             for (let i = deck.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [deck[i], deck[j]] = [deck[j], deck[i]]; 
+                [deck[i], deck[j]] = [deck[j], deck[i]];
             }
         }
+
+        function calculateOdds() {
+            if (!currentCard || deck.length === 0) {
+                oddsDisplay.textContent = "Odds: N/A (No current card or empty deck)";
+                return;
+            }
+
+            let higherCount = 0;
+            let lowerCount = 0;
+            let tieCount = 0;
+            const currentCardValue = currentCard.value;
+
+            for (const card of deck) {
+                if (card.value > currentCardValue) {
+                    higherCount++;
+                } else if (card.value < currentCardValue) {
+                    lowerCount++;
+                } else {
+                    tieCount++;
+                }
+            }
+
+            const totalRemaining = deck.length;
+            if (totalRemaining === 0) {
+                oddsDisplay.textContent = "Odds: Deck empty.";
+                return;
+            }
+
+            const higherProb = (higherCount / totalRemaining * 100).toFixed(1);
+            const lowerProb = (lowerCount / totalRemaining * 100).toFixed(1);
+            const tieProb = (tieCount / totalRemaining * 100).toFixed(1);
+
+            oddsDisplay.textContent = `Odds: Higher: ${higherProb}% | Lower: ${lowerProb}% | Tie: ${tieProb}%`;
+        }
+
 
         function startGame() {
             createDeck();
             shuffleDeck();
             messageEl.textContent = '';
-            messageEl.className = ''; 
-            nextCardEl.classList.add('hidden'); 
-            nextCardEl.textContent = '?'; 
+            messageEl.className = '';
+            nextCardEl.classList.add('hidden');
+            nextCardEl.textContent = '?';
             guessHigherBtn.disabled = false;
             guessLowerBtn.disabled = false;
-            newGameBtn.classList.add('hidden'); 
-            placeBetBtn.disabled = false; // Enable place bet button
-            betInput.disabled = false; // Enable bet input
-            betInput.value = currentBet; // Reset bet input to current bet
+            newGameBtn.classList.add('hidden');
+            placeBetBtn.disabled = false;
+            betInput.disabled = false;
+            betInput.value = currentBet;
+
+            forceWin = false; // Reset force flags
+            forceLose = false; // Reset force flags
+            forcedNextCardRank = null; // Reset forced card
 
             // Deal the first card
             if (deck.length > 0) {
@@ -294,7 +453,12 @@
             } else {
                 messageEl.textContent = "Something went wrong, no cards in deck!";
             }
-            updateCoinDisplay(); // Update coin display at start of game
+            updateCoinDisplay();
+            if (devModeActive) { // Only calculate odds if dev mode is active
+                calculateOdds();
+            } else {
+                oddsDisplay.textContent = "Odds: Hidden (Dev Mode Off)";
+            }
         }
 
         function revealNextCard() {
@@ -305,10 +469,34 @@
                 newGameBtn.classList.remove('hidden');
                 return false;
             }
-            nextCard = deck.pop();
+
+            // Handle forced next card
+            if (forcedNextCardRank) {
+                const desiredRank = forcedNextCardRank.toUpperCase();
+                const cardIndex = deck.findIndex(card => card.rank === desiredRank);
+
+                if (cardIndex !== -1) {
+                    const cardToForce = deck.splice(cardIndex, 1)[0]; // Remove card
+                    nextCard = cardToForce; // Set as next card
+                    messageEl.textContent += ` (Forced card: ${desiredRank})`; // Add a dev message
+                } else {
+                    messageEl.textContent += ` (Dev Error: Forced rank '${desiredRank}' not found! Drawing random.)`;
+                    nextCard = deck.pop(); // Draw random if forced card not found
+                }
+                forcedNextCardRank = null; // Reset flag after use
+            } else {
+                nextCard = deck.pop();
+            }
+
             nextCardEl.textContent = `${nextCard.rank}${nextCard.suit}`;
             nextCardEl.style.color = (nextCard.suit === '♥️' || nextCard.suit === '♦️') ? 'red' : 'black';
-            nextCardEl.classList.remove('hidden'); 
+
+            // Only reveal if dev mode is active or 'always reveal' is checked
+            if (devModeActive && revealNextCardToggle.checked) {
+                nextCardEl.classList.remove('hidden');
+            } else {
+                nextCardEl.classList.add('hidden'); // Ensure it's hidden normally
+            }
             return true;
         }
 
@@ -317,31 +505,64 @@
 
             let isCorrect;
             
-            if (guess === 'higher') {
+            // Apply force win/lose if active
+            if (forceWin) {
+                isCorrect = true;
+                messageEl.textContent = 'Dev Mode: FORCED WIN! 🎉';
+            } else if (forceLose) {
+                isCorrect = false;
+                messageEl.textContent = 'Dev Mode: FORCED LOSE! 🥺';
+            } else if (nextCard.value === currentCard.value) {
+                messageEl.textContent = `It's a tie (${currentCard.rank})! No win. 🤷‍♀️`;
+                isCorrect = false; // Treat ties as not winning for coin logic
+            } else if (guess === 'higher') {
                 isCorrect = nextCard.value > currentCard.value;
-            } else { 
+            } else {
                 isCorrect = nextCard.value < currentCard.value;
             }
 
-            if (nextCard.value === currentCard.value) {
-                messageEl.textContent = `It's a tie (${currentCard.rank})! No win. 🤷‍♀️`;
-                messageEl.classList.add('incorrect'); 
-            } else if (isCorrect) {
-                messageEl.textContent = 'You got it! You win! 🎉';
-                messageEl.classList.add('correct');
-                coins += currentBet; // Add bet to coins on win
-            } else {
-                messageEl.textContent = 'Nope, wrong guess. You lose! 🥺';
-                messageEl.classList.add('incorrect');
-                coins -= currentBet; // Deduct bet from coins on loss
+            if (nextCard.value !== currentCard.value) { // Don't override tie message
+                if (isCorrect) {
+                    messageEl.textContent = 'You got it! You win! 🎉';
+                    messageEl.classList.add('correct');
+                    coins += currentBet;
+                } else if (!forceWin && !forceLose) { // Prevent showing normal lose message if forced
+                    messageEl.textContent = 'Nope, wrong guess. You lose! 🥺';
+                    messageEl.classList.add('incorrect');
+                    coins -= currentBet;
+                }
+            } else { // Handle tie styling explicitly
+                messageEl.classList.add('incorrect'); // Use incorrect styling for ties
             }
-
-            updateCoinDisplay(); // Update coin display after each guess
+            
+            updateCoinDisplay();
             guessHigherBtn.disabled = true;
             guessLowerBtn.disabled = true;
-            newGameBtn.classList.remove('hidden'); 
-            placeBetBtn.disabled = true; // Disable place bet after guess
-            betInput.disabled = true; // Disable input too
+            newGameBtn.classList.remove('hidden');
+            placeBetBtn.disabled = true;
+            betInput.disabled = true;
+
+            // Reset force flags after the guess
+            forceWin = false;
+            forceLose = false;
+        }
+
+        // Dev Mode Functions
+        function toggleDevMode() {
+            devModeActive = !devModeActive;
+            if (devModeActive) {
+                devControls.classList.remove('hidden');
+                calculateOdds(); // Calculate odds immediately when dev mode opens
+                if (revealNextCardToggle.checked && nextCard) {
+                    nextCardEl.classList.remove('hidden'); // Show if already revealed and checkbox checked
+                }
+            } else {
+                devControls.classList.add('hidden');
+                oddsDisplay.textContent = "Odds: Hidden (Dev Mode Off)";
+                if (nextCardEl) { // Ensure nextCardEl exists before trying to hide
+                    nextCardEl.classList.add('hidden'); // Hide next card when dev mode off
+                }
+            }
         }
 
         // Event Listeners
@@ -365,15 +586,91 @@
             currentBetDisplay.textContent = currentBet;
             messageEl.textContent = `Bet set to ${currentBet}. Make your guess!`;
             messageEl.classList.remove('incorrect');
-            messageEl.classList.add('correct'); 
+            messageEl.classList.add('correct');
             guessHigherBtn.disabled = false;
             guessLowerBtn.disabled = false;
-            placeBetBtn.disabled = true; 
-            betInput.disabled = true; 
+            placeBetBtn.disabled = true;
+            betInput.disabled = true;
+            if (devModeActive) { // Update odds after bet is placed
+                calculateOdds();
+            }
         });
 
         betInput.addEventListener('input', () => {
             placeBetBtn.disabled = false;
+        });
+
+        // Dev Mode Event Listeners
+        devModeToggle.addEventListener('click', toggleDevMode);
+
+        addCoinsBtn.addEventListener('click', () => {
+            coins += 1000;
+            updateCoinDisplay();
+            messageEl.textContent = "1000 coins added!";
+            messageEl.classList.remove('incorrect');
+            messageEl.classList.add('correct');
+        });
+
+        revealNextCardToggle.addEventListener('change', () => {
+            if (devModeActive) {
+                if (revealNextCardToggle.checked && nextCard) { // Check if nextCard exists to show
+                    nextCardEl.classList.remove('hidden');
+                } else if (nextCard) { // Hide if unchecked
+                    nextCardEl.classList.add('hidden');
+                }
+                // Update odds if current card is present, as visibility might influence debug process
+                if (currentCard) {
+                    calculateOdds();
+                }
+            }
+        });
+
+
+        forceWinBtn.addEventListener('click', () => {
+            forceWin = true;
+            forceLose = false; // Ensure only one is active
+            messageEl.textContent = "Next guess will be a FORCED WIN!";
+            messageEl.classList.remove('incorrect');
+            messageEl.classList.add('correct');
+        });
+
+        forceLoseBtn.addEventListener('click', () => {
+            forceLose = true;
+            forceWin = false; // Ensure only one is active
+            messageEl.textContent = "Next guess will be a FORCED LOSE!";
+            messageEl.classList.remove('correct');
+            messageEl.classList.add('incorrect');
+        });
+
+        setNextCardBtn.addEventListener('click', () => {
+            const desiredRank = forceNextCardInput.value.toUpperCase();
+            if (!ranks.includes(desiredRank) && desiredRank !== '10') { // Validate rank input
+                messageEl.textContent = `Invalid rank: ${desiredRank}. Please use A, 2-10, J, Q, K.`;
+                messageEl.classList.remove('correct');
+                messageEl.classList.add('incorrect');
+                return;
+            }
+
+            // Find and move the desired card to be the next one drawn
+            const cardIndex = deck.findIndex(card => card.rank === desiredRank);
+
+            if (cardIndex !== -1) {
+                const cardToForce = deck.splice(cardIndex, 1)[0]; // Remove card from its current position
+                deck.push(cardToForce); // Add it to the end so it's popped next
+                forcedNextCardRank = desiredRank; // Flag that we set it
+                messageEl.textContent = `Next card will be a ${desiredRank}!`;
+                messageEl.classList.remove('incorrect');
+                messageEl.classList.add('correct');
+            } else {
+                messageEl.textContent = `Rank ${desiredRank} not found in remaining deck. Drawing random.`;
+                messageEl.classList.remove('correct');
+                messageEl.classList.add('incorrect');
+                forcedNextCardRank = null; // Reset if not found
+            }
+            forceNextCardInput.value = ''; // Clear input
+            if (devModeActive) { // Recalculate odds after deck manipulation
+                calculateOdds();
+            }
         });
 
 
