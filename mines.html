@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mines Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -47,6 +48,122 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             cursor: pointer;
             z-index: 100; /* Ensure it's on top */
+        }
+
+        /* New styles for Live Stats Button */
+        #liveStatsButton {
+            position: absolute;
+            top: 25px;
+            right: 250px; /* Adjust as needed to not overlap with coin display */
+            background-color: #4299e1; /* Blue */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            opacity: 0.7; /* A bit opaque */
+            transition: opacity 0.2s ease, background-color 0.2s ease;
+            z-index: 100; /* Ensure it's on top */
+        }
+
+        #liveStatsButton:hover {
+            opacity: 1;
+            background-color: #3182ce;
+        }
+
+        /* NEW: Styles for the movable modal */
+        .modal-overlay {
+            /* This will be the movable window itself */
+            position: absolute; /* Changed from fixed to absolute */
+            display: block; /* Will be toggled with 'hidden' class */
+            z-index: 1000; /* Ensure it's on top */
+            background-color: #2d3748; /* Darker grey, same as modal-content before */
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            width: 90%; /* Keep this for responsiveness */
+            max-width: 300px; /* Make it narrower */
+            min-width: 250px; /* Prevent it from becoming too small */
+            max-height: 600px; /* Make it taller */
+            min-height: 350px; /* Ensure it has a decent height */
+            color: #e2e8f0;
+            text-align: center;
+            resize: both; /* Allows resizing the window */
+            overflow: auto; /* Adds scrollbars if content overflows */
+            cursor: grab; /* Indicates it's draggable */
+            /* Initial positioning - JavaScript will adjust this */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%); /* Center it initially */
+        }
+
+        .modal-content {
+            /* No longer needed as a separate container, its styles are merged into modal-overlay */
+            /* Keep this rule to override any lingering default styles if needed, but it won't be a separate draggable element */
+        }
+
+        .modal-close-button {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: #e2e8f0;
+            cursor: pointer;
+            padding: 5px;
+        }
+        .modal-close-button:hover {
+            color: #4299e1;
+        }
+
+        .modal-content h2 {
+            color: #4299e1;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        #statsModalHeader {
+            cursor: grab; /* Explicitly make the header a grab handle */
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #4a5568; /* A subtle separator */
+            margin-bottom: 20px;
+        }
+
+        #profitChartContainer {
+            margin-bottom: 20px;
+            background-color: #1a202c; /* Chart background */
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        #betStats {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        #betStats span {
+            font-weight: bold;
+            color: #48bb78;
+        }
+
+        #resetStatsButton {
+            background-color: #e53e3e; /* Red */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease;
+        }
+        #resetStatsButton:hover {
+            background-color: #c53030;
+        }
+
+        .hidden {
+            display: none;
         }
 
         .controls {
@@ -296,14 +413,15 @@
         Coins: <span id="coinCount"></span>
     </div>
 
+    <button id="liveStatsButton">Live Stats</button>
+
     <div class="game-container">
         <h1>Mines</h1>
 
         <div class="controls">
             <div class="control-group">
                 <label for="betAmount">Bet Amount:</label>
-                <input type="number" id="betAmount" value="100" min="1" step="10">
-            </div>
+                <input type="number" id="betAmount" value="100" min="1" step="0.1"> </div>
             <div class="control-group">
                 <label for="minesCount">Mines:</label>
                 <select id="minesCount">
@@ -343,8 +461,7 @@
             <div class="dev-control-group">
                 <button id="giveCoinsButton">Give 1000 Coins 💰</button>
                 <label for="setCoinsInput">Set Coins To:</label>
-                <input type="number" id="setCoinsInput" value="1000" min="0">
-                <button id="setCoinsButton">Set Coins</button>
+                <input type="number" id="setCoinsInput" value="1000" min="0" step="0.1"> <button id="setCoinsButton">Set Coins</button>
             </div>
             <div class="dev-control-group">
                 <input type="checkbox" id="showMinesToggle">
@@ -357,7 +474,7 @@
             <div class="dev-control-group">
                 <button id="easyModeButton">Set Next Game to 1 Mine</button>
                 <button id="instantRevealAllButton">Instant Reveal All</button>
-            </div>
+                <button id="instantBetButton" style="background-color: #38a169;">Instant Bet</button> </div>
             <div class="dev-control-group">
                 <button id="forceWinButton" style="background-color: #48bb78;">Force Win</button>
                 <button id="forceLoseButton" style="background-color: #e53e3e;">Force Lose</button>
@@ -384,13 +501,28 @@
         </div>
     </div>
 
+    <div id="statsModal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button class="modal-close-button" id="closeStatsModalButton">&times;</button>
+            <h2 id="statsModalHeader">Live Stats</h2>
+            <div id="profitChartContainer">
+                <canvas id="profitChart"></canvas>
+            </div>
+            <p id="betStats">Total Bets: <span id="totalBetsDisplay">0</span></p>
+            <button id="resetStatsButton">Reset Stats</button>
+        </div>
+    </div>
+
     <script>
         const GRID_SIZE = 5; // 5x5 grid
         const DEV_PASSWORD = "DevMode"; // The password for dev mode
         const AUTOBET_CLICK_DELAY = 300; // ms delay between each autobet click
         const AUTOBET_ROUND_DELAY = 1000; // ms delay before starting next autobet round
 
-        let coins = parseInt(localStorage.getItem('coins') || '1000');
+        // Initialize coins by parsing as float, then rounding to 1 decimal place
+        let coins = parseFloat(localStorage.getItem('coins') || '1000.0'); // Ensure initial value is float
+        coins = parseFloat(coins.toFixed(1)); // Round to 1 decimal place and convert back to float
+
         let betAmount = 0;
         let minesCount = 0;
         let grid = []; // Stores the state of each cell (mine, revealed)
@@ -434,6 +566,7 @@
         const editMinesToggle = document.getElementById('editMinesToggle');
         const easyModeButton = document.getElementById('easyModeButton');
         const instantRevealAllButton = document.getElementById('instantRevealAllButton'); // New
+        const instantBetButton = document.getElementById('instantBetButton'); // NEW: Instant Bet Button
         const forceWinButton = document.getElementById('forceWinButton'); // New
         const forceLoseButton = document.getElementById('forceLoseButton'); // New
         const luckyMineToggle = document.getElementById('luckyMineToggle'); // NEW: Lucky Mine Toggle
@@ -446,6 +579,22 @@
         const startAutobetButton = document.getElementById('startAutobetButton');
         const stopAutobetButton = document.getElementById('stopAutobetButton');
 
+        // New elements for stats
+        const liveStatsButton = document.getElementById('liveStatsButton');
+        const statsModal = document.getElementById('statsModal');
+        const closeStatsModalButton = document.getElementById('closeStatsModalButton');
+        const profitChartCanvas = document.getElementById('profitChart');
+        const totalBetsDisplay = document.getElementById('totalBetsDisplay');
+        const resetStatsButton = document.getElementById('resetStatsButton');
+        const statsModalHeader = document.getElementById('statsModalHeader');
+
+        let profitHistory = JSON.parse(localStorage.getItem('profitHistory')) || [0]; // Store profit after each game
+        // Ensure profitHistory values are floats and rounded
+        profitHistory = profitHistory.map(p => parseFloat(p.toFixed(1)));
+
+        let totalBets = parseInt(localStorage.getItem('totalBets')) || 0;
+        let profitChart; // Chart.js instance (renamed from myChart)
+
 
         function calculateMultiplier(bombs, gemsFound) {
             if (gemsFound === 0) return 1.00;
@@ -457,17 +606,17 @@
         }
 
         function updateCoinDisplay() {
-            coinCountDisplay.textContent = coins;
-            localStorage.setItem('coins', coins);
+            coinCountDisplay.textContent = coins.toFixed(1); // Display with one decimal place
+            localStorage.setItem('coins', coins.toFixed(1)); // Save with one decimal place
         }
 
         window.addCoins = function(amount) {
-            amount = parseInt(amount);
+            amount = parseFloat(amount); // Ensure amount is a float
             if (!isNaN(amount) && amount > 0) {
-                coins += amount;
+                coins = parseFloat((coins + amount).toFixed(1)); // Add and round
                 updateCoinDisplay();
-                console.log(`Added ${amount} coins. New balance: ${coins}`);
-                messageEl.textContent = `+${amount} coins via console! 🥳`;
+                console.log(`Added ${amount.toFixed(1)} coins. New balance: ${coins.toFixed(1)}`); // Display with 1 decimal
+                messageEl.textContent = `+${amount.toFixed(1)} coins via console! 🥳`; // Display with 1 decimal
                 messageEl.classList.remove('lose');
                 messageEl.classList.add('win');
             } else {
@@ -480,11 +629,11 @@
 
         // New: Set exact coin amount
         function setCoinsTo() {
-            const amount = parseInt(setCoinsInput.value);
+            const amount = parseFloat(setCoinsInput.value); // Ensure amount is a float
             if (!isNaN(amount) && amount >= 0) {
-                coins = amount;
+                coins = parseFloat(amount.toFixed(1)); // Set and round
                 updateCoinDisplay();
-                messageEl.textContent = `Coins set to ${amount}. 💸`;
+                messageEl.textContent = `Coins set to ${amount.toFixed(1)}. 💸`; // Display with 1 decimal
                 messageEl.classList.remove('lose');
                 messageEl.classList.add('win');
             } else {
@@ -494,7 +643,6 @@
             }
         }
 
-
         function generateGrid() {
             minesGridEl.innerHTML = '';
             grid = [];
@@ -503,11 +651,7 @@
                 cell.classList.add('cell');
                 cell.dataset.index = i;
                 minesGridEl.appendChild(cell);
-                grid.push({
-                    hasMine: false,
-                    revealed: false,
-                });
-
+                grid.push({ hasMine: false, revealed: false });
                 // Re-apply autobet selection visual if in selection mode
                 // This is specifically for when the grid is regenerated while selection mode is active
                 if (selectingAutobetSquares && selectedAutobetSquares.has(i)) {
@@ -572,7 +716,7 @@
             betAmountInput.disabled = !enable || autobetRunning || selectingAutobetSquares || editMinesActive;
             minesCountSelect.disabled = !enable || autobetRunning || selectingAutobetSquares || editMinesActive;
             collectButton.disabled = !enable || gameOver || revealedGems === 0 || autobetRunning || selectingAutobetSquares || editMinesActive;
-            
+
             if (devMode) {
                 giveCoinsButton.disabled = !enable || autobetRunning || selectingAutobetSquares || editMinesActive;
                 setCoinsInput.disabled = !enable || autobetRunning || selectingAutobetSquares || editMinesActive;
@@ -581,18 +725,16 @@
                 editMinesToggle.disabled = !enable || autobetRunning || selectingAutobetSquares || !gameOver; // Can't edit if game running
                 easyModeButton.disabled = !enable || autobetRunning || selectingAutobetSquares || editMinesActive;
                 instantRevealAllButton.disabled = !enable || gameOver || autobetRunning || selectingAutobetSquares || editMinesActive; // Only if game is active
+                instantBetButton.disabled = !enable || autobetRunning || selectingAutobetSquares || editMinesActive || !gameOver; // NEW: Instant Bet button disabled if game is running or in special modes
                 forceWinButton.disabled = !enable || gameOver || autobetRunning || selectingAutobetSquares || editMinesActive; // Only if game is active
                 forceLoseButton.disabled = !enable || gameOver || autobetRunning || selectingAutobetSquares || editMinesActive; // Only if game is active
                 luckyMineToggle.disabled = !enable || autobetRunning || selectingAutobetSquares || editMinesActive; // NEW: Lucky Mine Toggle
-
                 autobetToggle.disabled = !enable || editMinesActive; // Can't enable autobet if editing mines
                 // selectAutobetSquaresButton should only be disabled if autobet is not enabled OR conditions prevent entering mode
                 selectAutobetSquaresButton.disabled = !autobetEnabled || !enable || autobetRunning || editMinesActive || !gameOver;
                 clearAutobetSelectionButton.disabled = !autobetEnabled || selectedAutobetSquares.size === 0 || autobetRunning || editMinesActive || !gameOver;
-                
                 // FIX (from previous turn): Removed !gameOver from startAutobetButton.disabled condition
                 startAutobetButton.disabled = !autobetEnabled || selectedAutobetSquares.size === 0 || autobetRunning || editMinesActive;
-                
                 stopAutobetButton.disabled = !autobetRunning;
             }
         }
@@ -610,656 +752,664 @@
             } else if (!gameOver && !autobetRunning) { // Game is active, no special modes
                 minesGridEl.addEventListener('click', handleCellClick);
             }
-            // If gameOver is true (game not started/ended) AND not in edit/autobet selection mode, no click listener is needed.
+            // If gameOver and not in edit/autobet select mode, no grid listener is needed
         }
 
         function startGame() {
-            if (gameOver) {
-                if (editMinesActive) {
-                    messageEl.textContent = "Exit 'Edit Mines' mode to start game. 🛑";
-                    messageEl.classList.add('lose');
-                    return false;
-                }
-                if (selectingAutobetSquares) {
-                    messageEl.textContent = "Exit 'Autobet Selection' mode to start game. 🛑";
-                    messageEl.classList.add('lose');
-                    return false;
-                }
-
-                betAmount = parseInt(betAmountInput.value);
-                minesCount = parseInt(minesCountSelect.value);
-
-                if (isNaN(betAmount) || betAmount <= 0) {
-                    messageEl.textContent = "Please enter a valid bet amount. 😔";
-                    messageEl.classList.add('lose');
-                    return false;
-                }
-                if (betAmount > coins) {
-                    messageEl.textContent = "You don't have enough coins for that bet! 💸";
-                    messageEl.classList.add('lose');
-                    return false;
-                }
-
-                coins -= betAmount;
-                updateCoinDisplay();
-
-                gameOver = false;
-                revealedGems = 0;
-                currentMultiplier = 1.00;
-                potentialWinnings = 0;
-                messageEl.textContent = '';
-                messageEl.className = 'message';
-
-                // Ensure controls are set correctly for game start
-                enableGameControls(false); // Disable game setup controls
-                updateGridEventListeners(); // Set up grid listeners for game play
-
-                generateGrid(); 
-                placeMines();
-                updateDisplays();
-
-                if (devMode && showMinesActive) {
-                    toggleShowMinesVisual(true);
-                }
-                return true;
+            if (coins < parseFloat(betAmountInput.value)) { // Compare float with float
+                messageEl.textContent = "Not enough coins for this bet! 😥";
+                messageEl.classList.remove('win');
+                messageEl.classList.add('lose');
+                return false; // Indicate game did not start
             }
-            return false;
+            if (autobetEnabled && selectedAutobetSquares.size === 0) {
+                messageEl.textContent = "Autobet enabled, but no squares selected! Please select squares or disable autobet. 🤔";
+                messageEl.classList.remove('win');
+                messageEl.classList.add('lose');
+                return false; // Indicate game did not start
+            }
+
+            betAmount = parseFloat(betAmountInput.value); // Parse as float
+            minesCount = parseInt(minesCountSelect.value);
+            coins = parseFloat((coins - betAmount).toFixed(1)); // Subtract bet and round
+            updateCoinDisplay();
+            totalBets++; // Increment total bets
+            saveStats(); // Save stats after bet
+            updateStatsDisplay(); // Update stats display
+
+            revealedGems = 0;
+            currentMultiplier = 1.00;
+            potentialWinnings = 0;
+            gameOver = false;
+            messageEl.textContent = "Game started! Good luck! ✨";
+            messageEl.classList.remove('lose', 'win');
+
+            generateGrid();
+            placeMines();
+            updateDisplays();
+            enableGameControls(false); // Disable game start controls
+            collectButton.disabled = true; // Collect button disabled at start
+
+            if (devMode && showMinesToggle.checked) {
+                showMines();
+            }
+            updateGridEventListeners(); // Ensure proper listener after game start
+            return true; // Indicate game started successfully
         }
 
-        function revealCell(index) {
-            if (gameOver || grid[index].revealed) return false;
+        function revealSquare(index) {
+            if (gameOver || grid[index].revealed) return;
 
-            const cellEl = minesGridEl.children[index];
+            const cell = minesGridEl.children[index];
             grid[index].revealed = true;
-            cellEl.classList.add('revealed');
 
             if (grid[index].hasMine) {
-                cellEl.classList.add('mine');
-                cellEl.textContent = '💣';
-                endGame(false); // Game Over (Loss)
-                return false;
-            } else {
-                cellEl.classList.add('gem');
-                cellEl.textContent = '💎';
-                revealedGems++;
-                
-                updateDisplays();
-                
-                if (revealedGems > 0 && !gameOver && !autobetRunning) {
-                    collectButton.disabled = false;
-                }
-
-                if (revealedGems === (GRID_SIZE * GRID_SIZE) - minePositions.size) {
-                    // All safe cells revealed, this is a win for the round
-                    // No direct endGame(true) here, collection or autobet will handle.
-                }
-                return true;
-            }
-        }
-
-        function handleCellClick(event) {
-            if (gameOver) return;
-            const index = parseInt(event.target.dataset.index);
-            revealCell(index);
-        }
-
-        function handleEditMineClick(event) {
-            if (!editMinesActive || !gameOver) return; // Only allow editing if not in game
-
-            const cellEl = event.target;
-            const index = parseInt(cellEl.dataset.index);
-
-            if (customMinePositions.has(index)) {
-                customMinePositions.delete(index);
-                cellEl.classList.remove('dev-mine-indicator');
-                grid[index].hasMine = false;
-            } else {
-                customMinePositions.add(index);
-                cellEl.classList.add('dev-mine-indicator');
-                grid[index].hasMine = true;
-            }
-            minesCountSelect.value = customMinePositions.size;
-        }
-
-        function handleAutobetSelectionClick(event) {
-            if (!selectingAutobetSquares || !gameOver) return; // Only allow selection if not in game
-
-            const cellEl = event.target;
-            const index = parseInt(cellEl.dataset.index);
-
-            if (selectedAutobetSquares.has(index)) {
-                selectedAutobetSquares.delete(index);
-                cellEl.classList.remove('autobet-selected');
-            } else {
-                selectedAutobetSquares.add(index);
-                cellEl.classList.add('autobet-selected');
-            }
-            selectedAutobetCount.textContent = selectedAutobetSquares.size;
-            enableGameControls(true); // Re-evaluate button states
-        }
-
-
-        function updateDisplays() {
-            currentMultiplier = calculateMultiplier(minePositions.size, revealedGems);
-            potentialWinnings = Math.floor(betAmount * currentMultiplier);
-
-            multiplierDisplay.textContent = `${currentMultiplier.toFixed(2)}x`;
-            potentialWinningsDisplay.textContent = `${potentialWinnings} Coins`;
-        }
-
-        function endGame(win) {
-            gameOver = true;
-            
-            // If autobet is running, don't immediately re-enable controls or stop it here.
-            // Let autobetLoop decide the next action (restart or fully stop if autobetRunning becomes false)
-            if (!autobetRunning) { 
-                enableGameControls(true);
-                updateGridEventListeners(); // Update grid listeners after game ends
-            }
-            // Clear any lingering dev/autobet specific visuals for the cells on game end
-            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-                minesGridEl.children[i].classList.remove('dev-mine-indicator', 'autobet-selected');
-            }
-
-            if (showMinesActive) {
-                toggleShowMinesVisual(false);
-                showMinesToggle.checked = false;
-            }
-            easyModeButton.dataset.active = 'false';
-            easyModeButton.style.backgroundColor = '';
-
-            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-                const cellEl = minesGridEl.children[i];
-                if (grid[i].hasMine && !grid[i].revealed) {
-                    cellEl.classList.add('revealed', 'mine');
-                    cellEl.textContent = '💣';
-                }
-                if (!grid[i].hasMine && !grid[i].revealed) {
-                    cellEl.classList.add('revealed', 'gem');
-                    cellEl.textContent = '💎';
-                }
-            }
-
-            if (win) {
-                messageEl.textContent = 'Congratulations! All gems found! 🎉';
-                messageEl.classList.add('win');
-            } else {
-                messageEl.textContent = 'Boom! You hit a mine. Game Over! 💥';
+                cell.classList.add('mine');
+                cell.textContent = '💣';
+                gameOver = true;
+                messageEl.textContent = `BOOM! You hit a mine. You lost ${betAmount.toFixed(1)} coins. 😭`; // Display with 1 decimal
+                messageEl.classList.remove('win');
                 messageEl.classList.add('lose');
-                potentialWinnings = 0; // Ensure winnings are 0 on loss
+                revealAllMines();
+                profitHistory.push(parseFloat((profitHistory[profitHistory.length - 1] - betAmount).toFixed(1))); // Subtract bet amount and round
+                saveStats();
+                updateStatsDisplay();
+                enableGameControls(true); // Re-enable start game buttons
+                updateGridEventListeners(); // Remove click listener from grid
+                // Removed stopAutobet(); call here to allow autobet to continue after a loss
+            } else {
+                cell.classList.add('gem');
+                cell.textContent = '💎';
+                revealedGems++;
+                currentMultiplier = calculateMultiplier(minesCount, revealedGems);
+                potentialWinnings = parseFloat((betAmount * currentMultiplier).toFixed(1)); // Calculate and round
+                messageEl.textContent = `Gem found! Current Multiplier: ${currentMultiplier.toFixed(2)}x. Potential Winnings: ${potentialWinnings.toFixed(1)} Coins.`; // Display with 1 decimal
+                messageEl.classList.remove('lose');
+                messageEl.classList.add('win');
                 updateDisplays();
-            }
-            // Clear custom mine positions after game if they were used and edit mode is not active
-            if (customMinePositions.size > 0 && !editMinesActive) {
-                 customMinePositions.clear();
-                 minesCountSelect.value = 10;
-                 minesCountSelect.disabled = false;
+                collectButton.disabled = false; // Enable collect button
+
+                // Check if all safe cells are revealed
+                const totalCells = GRID_SIZE * GRID_SIZE;
+                const safeCells = totalCells - minesCount;
+                if (revealedGems === safeCells) {
+                    collectWinnings(); // Automatically collect if all safe cells are found
+                    messageEl.textContent = `All gems found! You won ${potentialWinnings.toFixed(1)} coins! 🎉`; // Display with 1 decimal
+                }
             }
         }
 
         function collectWinnings() {
-            if (!gameOver && revealedGems > 0) { // Only collect if game is active and gems revealed
-                coins += potentialWinnings;
-                updateCoinDisplay();
-                messageEl.textContent = `You collected ${potentialWinnings} coins! Good job! 💰`;
-                messageEl.classList.add('win');
-                
-                gameOver = true; // IMPORTANT: Mark game as over after collecting
-                
-                // Reveal any remaining mines/gems for visual clarity after collection
-                for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-                    const cellEl = minesGridEl.children[i];
-                    if (grid[i].hasMine && !grid[i].revealed) {
-                        cellEl.classList.add('revealed', 'mine');
-                        cellEl.textContent = '💣';
-                    }
-                    if (!grid[i].hasMine && !grid[i].revealed) {
-                        cellEl.classList.add('revealed', 'gem');
-                        cellEl.textContent = '💎';
-                    }
-                    cellEl.classList.remove('dev-mine-indicator');
-                    cellEl.classList.remove('autobet-selected');
+            if (gameOver || revealedGems === 0) return;
+
+            coins = parseFloat((coins + potentialWinnings).toFixed(1)); // Add and round
+            updateCoinDisplay();
+            messageEl.textContent = `You collected ${potentialWinnings.toFixed(1)} coins! 🤑`; // Display with 1 decimal
+            messageEl.classList.remove('lose');
+            messageEl.classList.add('win');
+            gameOver = true;
+            profitHistory.push(parseFloat((profitHistory[profitHistory.length - 1] + potentialWinnings - betAmount).toFixed(1))); // Add net profit and round
+            saveStats();
+            updateStatsDisplay();
+            revealAllMines(); // Show remaining mines if any
+            enableGameControls(true); // Re-enable start game buttons
+            updateGridEventListeners(); // Remove click listener from grid
+            // Removed stopAutobet(); call here to allow autobet to continue after collecting
+        }
+
+        function updateDisplays() {
+            multiplierDisplay.textContent = currentMultiplier.toFixed(2) + 'x';
+            potentialWinningsDisplay.textContent = potentialWinnings.toFixed(1); // Display with one decimal place
+        }
+
+        function revealAllMines() {
+            minesGridEl.querySelectorAll('.cell').forEach((cellEl, index) => {
+                const cell = grid[index];
+                if (cell.hasMine && !cell.revealed) {
+                    cellEl.classList.add('mine');
+                    cellEl.textContent = '💣';
                 }
+            });
+        }
 
-                if (showMinesActive) {
-                    toggleShowMinesVisual(false);
-                    showMinesToggle.checked = false;
-                }
-                easyModeButton.dataset.active = 'false';
-                easyModeButton.style.backgroundColor = '';
-
-                // If autobet is running, let autobetLoop handle the next step.
-                // Otherwise, re-enable controls for manual play.
-                if (!autobetRunning) {
-                    enableGameControls(true);
-                    updateGridEventListeners();
-                } else {
-                    // During autobet, clear message to prepare for next round's message
-                    // messageEl.textContent = ''; 
-                }
-
-            } else if (revealedGems === 0) {
-                messageEl.textContent = "You need to reveal at least one gem to collect. 🤔";
-                messageEl.classList.add('lose');
-            }
-
-            if (customMinePositions.size > 0 && !editMinesActive) {
-                 customMinePositions.clear();
-                 minesCountSelect.value = 10;
-                 minesCountSelect.disabled = false;
+        function handleCellClick(event) {
+            const cellEl = event.target.closest('.cell');
+            if (cellEl) {
+                const index = parseInt(cellEl.dataset.index);
+                revealSquare(index);
             }
         }
 
-        // New Dev Mode Debugging Functions
+        function toggleDevMode() {
+            devMode = !devMode;
+            devModePasswordSection.style.display = devMode ? 'none' : 'flex';
+            devModeControls.classList.toggle('active', devMode);
+            devPasswordMessage.textContent = ''; // Clear message
+            enableGameControls(true); // Update button states
+        }
+
+        // Dev Mode Functions
+        giveCoinsButton.addEventListener('click', () => {
+            window.addCoins(1000);
+        });
+
+        setCoinsButton.addEventListener('click', setCoinsTo); // Use the new setCoinsTo function
+
+        showMinesToggle.addEventListener('change', () => {
+            showMinesActive = showMinesToggle.checked;
+            minesGridEl.querySelectorAll('.cell').forEach((cellEl, index) => {
+                if (grid[index].hasMine) {
+                    cellEl.classList.toggle('show-mine', showMinesActive);
+                }
+            });
+        });
+
+        editMinesToggle.addEventListener('change', () => {
+            editMinesActive = editMinesToggle.checked;
+            if (editMinesActive) {
+                messageEl.textContent = "Edit Mines Mode: Click cells to toggle mine positions for the NEXT game. 🚧";
+                messageEl.classList.remove('win', 'lose');
+                minesGridEl.querySelectorAll('.cell').forEach((cellEl, index) => {
+                    if (customMinePositions.has(index)) {
+                        cellEl.classList.add('dev-mine-indicator');
+                    }
+                });
+            } else {
+                messageEl.textContent = "Edit Mines Mode Off.";
+                minesGridEl.querySelectorAll('.cell').forEach(cellEl => {
+                    cellEl.classList.remove('dev-mine-indicator');
+                });
+            }
+            updateGridEventListeners(); // Re-assign click listener based on mode
+            enableGameControls(true); // Update button states
+        });
+
+        function handleEditMineClick(event) {
+            const cellEl = event.target.closest('.cell');
+            if (cellEl && editMinesActive) {
+                const index = parseInt(cellEl.dataset.index);
+                if (customMinePositions.has(index)) {
+                    customMinePositions.delete(index);
+                    cellEl.classList.remove('dev-mine-indicator');
+                } else {
+                    customMinePositions.add(index);
+                    cellEl.classList.add('dev-mine-indicator');
+                }
+                messageEl.textContent = `Custom mines set: ${customMinePositions.size}.`;
+                messageEl.classList.remove('win', 'lose');
+            }
+        }
+
+        easyModeButton.addEventListener('click', () => {
+            easyModeButton.dataset.active = easyModeButton.dataset.active === 'true' ? 'false' : 'true';
+            if (easyModeButton.dataset.active === 'true') {
+                messageEl.textContent = "Easy Mode will set next game to 1 mine! ✨";
+                messageEl.classList.add('win');
+            } else {
+                messageEl.textContent = "Easy Mode deactivated.";
+                messageEl.classList.remove('win', 'lose');
+            }
+        });
+
+        instantRevealAllButton.addEventListener('click', instantRevealAll); // New event listener for instant reveal
+
         function instantRevealAll() {
-            if (gameOver) {
-                messageEl.textContent = "Start a game first to reveal all! ☝️";
+            if (gameOver || !devMode) return;
+            minesGridEl.querySelectorAll('.cell').forEach((cellEl, index) => {
+                if (!grid[index].revealed) {
+                    revealSquare(index);
+                }
+            });
+        }
+
+        // NEW: Instant Bet function
+        function instantBet() {
+            if (!devMode) {
+                messageEl.textContent = "Instant Bet is a Dev Mode feature. 🤫";
                 messageEl.classList.add('lose');
                 return;
             }
-            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-                if (!grid[i].revealed) {
-                    grid[i].revealed = true;
-                    const cellEl = minesGridEl.children[i];
-                    cellEl.classList.add('revealed');
-                    if (grid[i].hasMine) {
-                        cellEl.classList.add('mine');
-                        cellEl.textContent = '💣';
-                    } else {
-                        cellEl.classList.add('gem');
-                        cellEl.textContent = '💎';
-                        revealedGems++; // Count gems for potential win check
+            if (!gameOver) {
+                messageEl.textContent = "A game is already in progress! Finish or collect first. 🛑";
+                messageEl.classList.add('lose');
+                return;
+            }
+            if (selectedAutobetSquares.size === 0) { // New check
+                messageEl.textContent = "Please select squares for Instant Bet in Autobet Controls! 🤔";
+                messageEl.classList.remove('win');
+                messageEl.classList.add('lose');
+                return;
+            }
+
+            // Attempt to start game
+            const gameStarted = startGame();
+            if (gameStarted) {
+                // If game started successfully, instantly reveal selected squares
+                const squaresToReveal = Array.from(selectedAutobetSquares);
+                for (const index of squaresToReveal) {
+                    if (gameOver) { // Check if a mine was hit during revealing selected squares
+                        messageEl.textContent = `Instant Bet: Hit a mine on selected square ${index}! You lost. 😭`;
+                        messageEl.classList.remove('win');
+                        messageEl.classList.add('lose');
+                        return; // Stop and exit if a mine is hit
                     }
+                    revealSquare(index);
                 }
-            }
-            // Check for win/lose after revealing all
-            if (grid.some(cell => cell.hasMine && cell.revealed)) { // If any mine was revealed
-                endGame(false);
+
+                if (!gameOver) { // If no mine was hit among selected squares, collect winnings
+                    collectWinnings();
+                    messageEl.textContent = "Instant Bet: Selected squares revealed and winnings collected! �";
+                    messageEl.classList.remove('lose');
+                    messageEl.classList.add('win');
+                } else {
+                    // This case is already handled inside the loop if a mine is hit
+                }
             } else {
-                endGame(true); // All safe cells revealed, or no mines hit
+                // startGame already sets a message if it fails (e.g., not enough coins)
+                console.log("Instant Bet failed to start game.");
             }
-            messageEl.textContent = "All cells instantly revealed! ✨";
-            messageEl.classList.add('win');
         }
+
+        forceWinButton.addEventListener('click', forceWin); // New
+        forceLoseButton.addEventListener('click', forceLose); // New
 
         function forceWin() {
-            if (gameOver) {
-                messageEl.textContent = "Start a game first to force a win! ☝️";
-                messageEl.classList.add('lose');
-                return;
-            }
-            // Set revealedGems to max possible safe cells
-            revealedGems = (GRID_SIZE * GRID_SIZE) - minePositions.size;
-            endGame(true);
-            messageEl.textContent = "Forced Win! 🎉";
+            if (gameOver || !devMode) return;
+            messageEl.textContent = "Forcing a win! 🏆";
+            messageEl.classList.remove('lose');
             messageEl.classList.add('win');
+
+            // Find all safe cells and reveal them
+            minesGridEl.querySelectorAll('.cell').forEach((cellEl, index) => {
+                if (!grid[index].hasMine && !grid[index].revealed) {
+                    revealSquare(index);
+                }
+            });
+            collectWinnings(); // Collect winnings after revealing all gems
         }
 
         function forceLose() {
-            if (gameOver) {
-                messageEl.textContent = "Start a game first to force a lose! ☝️";
-                messageEl.classList.add('lose');
-                return;
-            }
-            // Find a mine and reveal it
-            const mineIndex = Array.from(minePositions)[0];
-            if (mineIndex !== undefined) {
-                grid[mineIndex].revealed = true; // Mark as revealed to trigger loss
-                endGame(false);
-            } else {
-                // If for some reason there are no mines (e.g. 0 mines selected)
-                messageEl.textContent = "Cannot force lose, no mines present! 😅";
-                messageEl.classList.add('lose');
-            }
-            messageEl.textContent = "Forced Lose! 😵‍💫";
+            if (gameOver || !devMode) return;
+            messageEl.textContent = "Forcing a loss! 💀";
+            messageEl.classList.remove('win');
             messageEl.classList.add('lose');
-        }
 
-
-        // Dev Mode Logic
-        function unlockDevMode() {
-            if (devModePasswordInput.value === DEV_PASSWORD) {
-                devMode = true;
-                devModePasswordSection.style.display = 'none';
-                devModeControls.classList.add('active');
-                devPasswordMessage.textContent = "Dev Mode Unlocked! 🎉";
-                devPasswordMessage.style.color = '#48bb78';
-                console.log("Dev Mode ON.");
-                enableGameControls(true);
-                updateGridEventListeners(); // Update grid listeners for dev mode
-            } else {
-                devPasswordMessage.textContent = "Incorrect password. 🚫";
-                devPasswordMessage.style.color = '#e53e3e';
-            }
-        }
-
-        function toggleShowMinesVisual(enable) {
-            showMinesActive = enable;
-            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-                const cellEl = minesGridEl.children[i];
+            // Find a mine and reveal it
+            for (let i = 0; i < grid.length; i++) {
                 if (grid[i].hasMine && !grid[i].revealed) {
-                    if (enable) {
-                        cellEl.classList.add('show-mine');
-                    } else {
-                        cellEl.classList.remove('show-mine');
-                    }
+                    revealSquare(i); // This will end the game
+                    return;
                 }
             }
-        }
-
-        function toggleEditMinesMode() {
-            editMinesActive = editMinesToggle.checked;
-            if (editMinesActive) {
-                if (autobetRunning) {
-                    editMinesToggle.checked = false;
-                    messageEl.textContent = "Stop Autobet before editing mines. 🛑";
-                    messageEl.classList.add('lose');
-                    return;
-                }
-                if (!gameOver) {
-                    editMinesToggle.checked = false;
-                    messageEl.textContent = "End current game before editing mines. 🛑";
-                    messageEl.classList.add('lose');
-                    return;
-                }
-                if (selectingAutobetSquares) {
-                    editMinesToggle.checked = false;
-                    messageEl.textContent = "Exit Autobet Selection before editing mines. 🛑";
-                    messageEl.classList.add('lose');
-                    return;
-                }
-
-                enableGameControls(false); // Temporarily disable all controls
-                updateGridEventListeners(); // Change grid listener to edit mode
-                
-                generateGrid(); // Re-generate grid to show indicators
-                customMinePositions.clear();
-                minesCountSelect.value = 0;
-
-                messageEl.textContent = "Edit Mines: Click cells to toggle mines. ✏️";
-                messageEl.classList.remove('lose');
-                messageEl.classList.add('win');
-
-            } else {
+            // Fallback: if no mines left (e.g., all collected), just lose the bet
+            if (!gameOver) {
+                coins = parseFloat((coins - betAmount).toFixed(1)); // Subtract bet and round
+                updateCoinDisplay();
+                profitHistory.push(parseFloat((profitHistory[profitHistory.length - 1] - betAmount).toFixed(1)));
+                saveStats();
+                updateStatsDisplay();
+                gameOver = true;
                 enableGameControls(true);
-                updateGridEventListeners(); // Change grid listener back to game mode
-                minesCountSelect.disabled = false;
-                
-                for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-                    minesGridEl.children[i].classList.remove('dev-mine-indicator');
-                }
-                generateGrid(); // Re-generate grid to clear visual states and re-attach proper listener
-                
-                minesCountSelect.value = customMinePositions.size > 0 ? customMinePositions.size : 10;
-                messageEl.textContent = `Edited mines: ${customMinePositions.size}. Ready to play! ✅`;
-                messageEl.classList.remove('lose');
-                messageEl.classList.add('win');
+                updateGridEventListeners();
             }
         }
 
-        // Autobet Logic
+        // Autobet Functionality
         function toggleAutobetEnabled() {
             autobetEnabled = autobetToggle.checked;
             if (autobetEnabled) {
-                messageEl.textContent = "Autobet enabled. Select squares or start! 🤖";
-                messageEl.classList.remove('lose');
-                messageEl.classList.add('win');
+                messageEl.textContent = "Autobet enabled. Select squares to begin!";
+                messageEl.classList.remove('lose', 'win');
             } else {
-                messageEl.textContent = "Autobet disabled. 😴";
-                messageEl.classList.remove('win');
-                messageEl.classList.add('lose');
-                if (autobetRunning) {
-                    stopAutobet();
-                }
-                // When disabling autobet via toggle, also ensure selection mode is off
-                if (selectingAutobetSquares) {
-                    autobetToggleSelectionMode(false);
-                    // selectAutobetSquaresButton.style.backgroundColor = ''; // This was for a visual toggle, removed for simplicity
-                }
+                stopAutobet(); // Ensure autobet stops if disabled
+                messageEl.textContent = "Autobet disabled.";
+                messageEl.classList.remove('lose', 'win');
+                selectingAutobetSquares = false; // Exit selection mode
+                minesGridEl.querySelectorAll('.cell.autobet-selected').forEach(cellEl => {
+                    cellEl.classList.remove('autobet-selected');
+                });
+                enableGameControls(true); // Re-enable controls if autobet was the only thing disabling them
+                updateGridEventListeners();
             }
-            enableGameControls(true);
-            updateGridEventListeners(); // Update grid listeners based on autobet enabled state
+            enableGameControls(true); // Update button states
         }
 
         function autobetToggleSelectionMode(enable) {
-            // If trying to enable and conditions prevent it, ensure selectingAutobetSquares is false
-            if (enable) {
-                if (!gameOver) {
-                    messageEl.textContent = "End current game to select autobet squares. 🛑";
-                    messageEl.classList.add('lose');
-                    selectingAutobetSquares = false; // Important: reset flag if couldn't enter mode
-                    return;
-                }
-                if (editMinesActive) {
-                    messageEl.textContent = "Exit 'Edit Mines' mode to select autobet squares. 🛑";
-                    messageEl.classList.add('lose');
-                    selectingAutobetSquares = false; // Important: reset flag
-                    return;
-                }
-                if (autobetRunning) {
-                    messageEl.textContent = "Stop Autobet before selecting squares. 🛑";
-                    messageEl.classList.add('lose');
-                    selectingAutobetSquares = false; // Important: reset flag
-                    return;
-                }
-                // If all checks pass, then actually set selectingAutobetSquares to true
-                selectingAutobetSquares = true;
-
-                messageEl.textContent = "Click cells to select for Autobet. 🎯";
-                messageEl.classList.remove('lose');
-                messageEl.classList.add('win');
-                
-                updateGridEventListeners(); // Change grid listener to selection mode
-                
-                // Re-apply visual if cells were already selected when *entering* selection mode
-                selectedAutobetSquares.forEach(index => {
-                    minesGridEl.children[index].classList.add('autobet-selected');
-                });
-                enableGameControls(false); // Disable game controls while selecting
-                selectAutobetSquaresButton.disabled = false; // Keep this button enabled
-                clearAutobetSelectionButton.disabled = false; // Keep this button enabled
-                startAutobetButton.disabled = true; // Disable start autobet
-                stopAutobetButton.disabled = true; // Disable stop autobet
-                autobetToggle.disabled = true; // Disable main autobet toggle
+            selectingAutobetSquares = enable;
+            if (selectingAutobetSquares) {
+                messageEl.textContent = "Click squares to select/deselect for autobet. Click 'Select Squares' again to finish. ✨";
+                messageEl.classList.remove('win', 'lose');
+                selectAutobetSquaresButton.textContent = "Finish Selecting Squares";
             } else {
-                // This block executes when disabling selection mode
-                selectingAutobetSquares = false; // Ensure flag is false
+                messageEl.textContent = `Selected ${selectedAutobetSquares.size} squares for autobet.`;
+                selectAutobetSquaresButton.textContent = "Select Squares for Autobet";
+            }
+            updateGridEventListeners(); // Change grid listener
+            enableGameControls(true); // Update button states
+        }
 
-                messageEl.textContent = "Autobet selection complete. ✅";
-                messageEl.classList.remove('lose');
-                messageEl.classList.add('win');
-                
-                // --- FIX: Ensure all autobet-selected classes are removed when exiting mode ---
-                for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-                    minesGridEl.children[i].classList.remove('autobet-selected');
+        function handleAutobetSelectionClick(event) {
+            const cellEl = event.target.closest('.cell');
+            if (cellEl) {
+                const index = parseInt(cellEl.dataset.index);
+                if (selectedAutobetSquares.has(index)) {
+                    selectedAutobetSquares.delete(index);
+                    cellEl.classList.remove('autobet-selected');
+                } else {
+                    selectedAutobetSquares.add(index);
+                    cellEl.classList.add('autobet-selected');
                 }
-                // --- END FIX ---
-
-                updateGridEventListeners(); // Change grid listener back to game mode
-                enableGameControls(true); // Re-enable general game controls
-                autobetToggle.disabled = false; // Enable main autobet toggle
+                selectedAutobetCount.textContent = selectedAutobetSquares.size;
             }
         }
 
         function clearAutobetSelection() {
-            selectedAutobetSquares.forEach(index => {
-                minesGridEl.children[index].classList.remove('autobet-selected');
-            });
             selectedAutobetSquares.clear();
+            minesGridEl.querySelectorAll('.cell.autobet-selected').forEach(cellEl => {
+                cellEl.classList.remove('autobet-selected');
+            });
             selectedAutobetCount.textContent = 0;
             messageEl.textContent = "Autobet selection cleared. 🧹";
-            messageEl.classList.remove('lose');
-            messageEl.classList.add('win');
+            messageEl.classList.remove('win', 'lose');
             enableGameControls(true);
-            updateGridEventListeners(); // Update grid listeners
         }
 
         async function startAutobet() {
-            if (autobetRunning) {
-                messageEl.textContent = "Autobet already running. 🤷‍♀️";
-                messageEl.classList.add('lose');
+            if (autobetRunning) return;
+            if (!autobetEnabled) {
+                messageEl.textContent = "Autobet is not enabled!";
                 return;
             }
             if (selectedAutobetSquares.size === 0) {
-                messageEl.textContent = "Select squares for Autobet first! 🤦‍♀️";
-                messageEl.classList.add('lose');
+                messageEl.textContent = "No squares selected for autobet!";
                 return;
             }
-            if (!gameOver) {
-                messageEl.textContent = "End current game before starting autobet. 🛑";
+            if (coins < parseFloat(betAmountInput.value)) { // Compare float with float
+                messageEl.textContent = "Not enough coins to start autobet! 😥";
+                messageEl.classList.remove('win');
                 messageEl.classList.add('lose');
+                enableGameControls(true); // Re-enable controls if autobet cannot start
                 return;
-            }
-            if (editMinesActive) {
-                messageEl.textContent = "Exit 'Edit Mines' mode before starting autobet. 🛑";
-                messageEl.classList.add('lose');
-                return;
-            }
-            if (selectingAutobetSquares) {
-                // If trying to start autobet while in selection mode, exit selection mode first.
-                autobetToggleSelectionMode(false); 
-                messageEl.textContent = "Autobet Selection exited. Now starting Autobet. 🚀";
-                messageEl.classList.remove('lose');
-                messageEl.classList.add('win');
-                // Give a moment for UI update if desired, then proceed.
-                await new Promise(resolve => setTimeout(resolve, 50)); 
             }
 
             autobetRunning = true;
-            autobetStopping = false; // Ensure this is false when starting
-            enableGameControls(false);
-            updateGridEventListeners(); // Grid should not be clickable during autobet
-            stopAutobetButton.disabled = false;
+            autobetStopping = false; // Reset stopping flag
+            messageEl.textContent = "Autobet started! 🤖";
+            messageEl.classList.remove('lose', 'win');
+            enableGameControls(false); // Disable all controls except stop
 
-            messageEl.textContent = "Autobet started! Good luck! 🍀";
-            messageEl.classList.remove('lose');
-            messageEl.classList.add('win');
+            const squaresToClick = Array.from(selectedAutobetSquares);
 
-            await autobetLoop();
-        }
-
-        async function autobetLoop() {
-            // Immediate check for stopping sequence
-            if (!autobetRunning || autobetStopping) {
-                messageEl.textContent = "Autobet stopped. ⏸️";
-                messageEl.classList.add('lose');
-                enableGameControls(true);
-                updateGridEventListeners();
-                return; // Exit immediately
-            }
-            
-            // If a game is active, ensure it's ended before starting a new autobet round.
-            // This handles cases where manual play or dev tools might have left a game running.
-            if (!gameOver) {
-                // If current game is ongoing, and it's not a win state after all cells revealed, it's a loss.
-                // We're forcing an end to ensure a clean slate for the next autobet round.
-                endGame(false); 
-                await new Promise(resolve => setTimeout(resolve, AUTOBET_CLICK_DELAY)); // Small delay for UI update
-            }
-
-            const gameStarted = startGame();
-            if (!gameStarted) {
-                stopAutobet(); // Stop autobet if starting a new game fails
-                messageEl.textContent = "Autobet stopped due to game start failure.😞";
-                messageEl.classList.add('lose');
-                return;
-            }
-
-            await new Promise(resolve => setTimeout(resolve, AUTOBET_ROUND_DELAY));
-
-            // Check again after round start delay
-            if (!autobetRunning || autobetStopping) { return; }
-
-            const selectedIndicesArray = Array.from(selectedAutobetSquares);
-            let mineHitInRound = false;
-
-            for (let i = 0; i < selectedIndicesArray.length; i++) {
-                const index = selectedIndicesArray[i];
-                if (!autobetRunning || gameOver || autobetStopping) { // Check flags before each click
-                    // If autobet is stopped or game ends (e.g., manual intervention, previous mine hit within the same loop)
-                    mineHitInRound = true; // Set to true to prevent further clicks/collection in this round
-                    break; // Exit the click loop
+            while (autobetRunning && !autobetStopping) {
+                const gameStarted = startGame(); // Check if game started successfully
+                if (!gameStarted) { // If startGame failed (e.g., not enough coins)
+                    autobetRunning = false;
+                    messageEl.textContent = "Autobet stopped due to insufficient funds! 😔";
+                    messageEl.classList.add('lose');
+                    enableGameControls(true);
+                    return;
                 }
-                const result = revealCell(index);
-                if (!result) { // If a mine was hit
-                    mineHitInRound = true;
-                    // messageEl.textContent will be set by endGame(false) inside revealCell
-                    break; // Stop clicking if a mine is hit
-                }
-                await new Promise(resolve => setTimeout(resolve, AUTOBET_CLICK_DELAY));
-            }
 
-            // After all clicks (or early break due to mine/stop)
-            if (autobetRunning && !autobetStopping) { // Ensure autobet is still active and not manually stopping
-                if (!mineHitInRound && revealedGems === selectedAutobetSquares.size && !gameOver) {
-                    // All selected squares revealed and no mine hit and game still active (not ended by revealCell)
+                // Click selected squares
+                for (let i = 0; i < squaresToClick.length; i++) {
+                    const index = squaresToClick[i];
+                    if (autobetStopping) break; // Check stop flag
+                    const cell = minesGridEl.children[index];
+                    if (cell && !grid[index].revealed) { // Only click if not already revealed
+                        revealSquare(index);
+                        await new Promise(resolve => setTimeout(resolve, AUTOBET_CLICK_DELAY)); // Delay between clicks
+                    }
+                    if (gameOver) {
+                        // If a mine is hit, the game is over, but autobet should continue to the next round.
+                        // No need to break the outer loop or call stopAutobet here.
+                        break; 
+                    }
+                }
+
+                if (!gameOver) { // If game is still active (no mine hit), collect winnings
                     collectWinnings();
-                    await new Promise(resolve => setTimeout(resolve, AUTOBET_CLICK_DELAY)); // Delay after collection message
-                } else if (mineHitInRound && gameOver) {
-                    // This means a mine was hit during the clicks. The game is already over (loss).
-                    // Message is already set by endGame. We just need to reset for the next round.
-                    await new Promise(resolve => setTimeout(resolve, AUTOBET_CLICK_DELAY)); // Small delay for UI
                 }
-                // Schedule the next round
-                autobetTimeoutId = setTimeout(autobetLoop, AUTOBET_ROUND_DELAY);
-            } else {
-                // If autobetRunning is false or autobetStopping is true, it means stopAutobet was called.
-                // The stopAutobet function already handles re-enabling controls and message.
+
+                await new Promise(resolve => setTimeout(resolve, AUTOBET_ROUND_DELAY)); // Delay before next round
             }
+            autobetRunning = false; // Ensure flag is false when loop exits naturally
+            messageEl.textContent = "Autobet stopped. 🛑";
+            messageEl.classList.remove('win');
+            messageEl.classList.add('lose');
+            enableGameControls(true); // Re-enable controls
+            updateGridEventListeners();
         }
 
         function stopAutobet() {
-            autobetStopping = true; // Signal immediate stop
-            autobetRunning = false;
-            clearTimeout(autobetTimeoutId);
-            messageEl.textContent = "Autobet stopped. 🛑";
-            messageEl.classList.add('lose');
-            enableGameControls(true);
-            updateGridEventListeners(); // Re-enable grid clicking for manual play
-            // Ensure all visual indicators are cleared immediately
-            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
-                minesGridEl.children[i].classList.remove('show-mine', 'dev-mine-indicator', 'autobet-selected');
+            autobetStopping = true; // Signal to stop
+            if (autobetTimeoutId) {
+                clearTimeout(autobetTimeoutId);
+                autobetTimeoutId = null;
             }
-            generateGrid(); // Re-generate grid to clear visual states (if any lingering)
-            autobetStopping = false; // Reset flag after full stop sequence
+            // The loop will eventually check autobetStopping and exit
+            messageEl.textContent = "Stopping autobet... Please wait. ⏳";
+            messageEl.classList.remove('win', 'lose');
+            enableGameControls(false); // Keep controls disabled until fully stopped
         }
 
+        // Live Stats Modal
+        liveStatsButton.addEventListener('click', () => {
+            statsModal.classList.remove('hidden');
+            renderProfitChart(); // Render chart when modal is opened
+            updateStatsDisplay(); // Update stats when modal is opened
+        });
+
+        closeStatsModalButton.addEventListener('click', () => {
+            statsModal.classList.add('hidden');
+        });
+
+        resetStatsButton.addEventListener('click', () => {
+            profitHistory = [0];
+            totalBets = 0;
+            saveStats();
+            updateStatsDisplay();
+            renderProfitChart();
+            messageEl.textContent = "Stats reset! 📊";
+            messageEl.classList.remove('win', 'lose');
+        });
+
+        function saveStats() {
+            localStorage.setItem('profitHistory', JSON.stringify(profitHistory));
+            localStorage.setItem('totalBets', totalBets);
+        }
+
+        function loadStats() {
+            profitHistory = JSON.parse(localStorage.getItem('profitHistory')) || [0];
+            // Ensure profitHistory values are floats and rounded when loaded
+            profitHistory = profitHistory.map(p => parseFloat(p.toFixed(1)));
+            totalBets = parseInt(localStorage.getItem('totalBets')) || 0;
+        }
+
+        function updateStatsDisplay() {
+            totalBetsDisplay.textContent = totalBets;
+            if (profitChart) {
+                renderProfitChart(); // Re-render chart to reflect new data
+            }
+        }
+
+        function renderProfitChart() {
+            if (profitChart) {
+                profitChart.destroy(); // Destroy existing chart before creating a new one
+            }
+
+            const ctx = profitChartCanvas.getContext('2d');
+            profitChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: profitHistory.map((_, i) => ''), // Empty labels for cleaner look
+                    datasets: [{
+                        label: 'Profit/Loss', // Simpler label
+                        data: profitHistory,
+                        borderColor: '#4299e1', // Default blue for the line (will be overridden by segments)
+                        backgroundColor: (context) => {
+                            // Default background, will be overridden by segment for specific parts
+                            const gradient = ctx.createLinearGradient(0, 0, 0, profitChartCanvas.height);
+                            gradient.addColorStop(0, 'rgba(66, 153, 225, 0.4)');
+                            gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                            return gradient;
+                        },
+                        tension: 0.4, // Slightly smoother line
+                        fill: true,
+                        pointRadius: 0, // Hide data points
+                        borderWidth: 2, // Thicker line
+                        segment: { // Apply segment-specific styling
+                            borderColor: (ctx) => {
+                                const y0 = ctx.p0.parsed.y;
+                                const y1 = ctx.p1.parsed.y;
+                                // If both points are above or on zero, or crossing from negative to positive
+                                if ((y0 >= 0 && y1 >= 0) || (y0 < 0 && y1 >= 0)) {
+                                    return '#48bb78'; // Green
+                                }
+                                // If both points are below or on zero, or crossing from positive to negative
+                                else if ((y0 <= 0 && y1 <= 0) || (y0 >= 0 && y1 < 0)) {
+                                    return '#e53e3e'; // Red
+                                }
+                                return '#4299e1'; // Fallback for other cases (shouldn't happen with proper logic)
+                            },
+                            backgroundColor: (ctx) => {
+                                const y0 = ctx.p0.parsed.y;
+                                const y1 = ctx.p1.parsed.y;
+                                const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
+
+                                // If both points are above or on zero, or crossing from negative to positive
+                                if ((y0 >= 0 && y1 >= 0) || (y0 < 0 && y1 >= 0)) {
+                                    gradient.addColorStop(0, 'rgba(72, 187, 120, 0.4)'); // Green fill
+                                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                                }
+                                // If both points are below or on zero, or crossing from positive to negative
+                                else if ((y0 <= 0 && y1 <= 0) || (y0 >= 0 && y1 < 0)) {
+                                    gradient.addColorStop(0, 'rgba(229, 62, 62, 0.4)'); // Red fill
+                                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                                } else {
+                                    // Fallback for other cases, use a neutral fill
+                                    gradient.addColorStop(0, 'rgba(66, 153, 225, 0.4)');
+                                    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                                }
+                                return gradient;
+                            }
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            display: false, // Hide x-axis
+                            grid: {
+                                display: false // Hide x-axis grid lines
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: '#4a5568', // Keep subtle y-axis grid lines
+                                drawBorder: false // Hide y-axis border
+                            },
+                            ticks: {
+                                color: '#e2e8f0', // Keep y-axis tick color
+                                beginAtZero: false // Allow chart to not start at zero
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false // Hide the legend completely for simplicity
+                        },
+                        tooltip: {
+                            enabled: true // Keep tooltips on hover for detail
+                        }
+                    }
+                }
+            });
+        }
+
+        // Draggable Window Functionality for Stats Modal
+        let isDragging = false;
+        let offsetX, offsetY;
+
+        statsModalHeader.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // Only left click
+                isDragging = true;
+                statsModal.style.cursor = 'grabbing';
+                // Calculate offset relative to the modal's current position
+                const rect = statsModal.getBoundingClientRect();
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+                statsModal.style.transition = 'none'; // Disable transition during drag
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+
+            // Calculate new position relative to the viewport
+            let newLeft = e.clientX - offsetX;
+            let newTop = e.clientY - offsetY;
+
+            // Optional: Boundary checks (e.g., keep within viewport)
+            // Get viewport dimensions
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const modalWidth = statsModal.offsetWidth;
+            const modalHeight = statsModal.offsetHeight;
+
+            // Prevent dragging outside the left/top edges
+            if (newLeft < 0) newLeft = 0;
+            if (newTop < 0) newTop = 0;
+
+            // Prevent dragging outside the right/bottom edges
+            if (newLeft + modalWidth > viewportWidth) newLeft = viewportWidth - modalWidth;
+            if (newTop + modalHeight > viewportHeight) newTop = viewportHeight - modalHeight;
+
+
+            // Apply new position
+            statsModal.style.left = `${newLeft}px`;
+            statsModal.style.top = `${newTop}px`;
+            statsModal.style.transform = 'none'; // Remove transform to allow direct top/left positioning
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            statsModal.style.cursor = 'grab';
+            statsModal.style.transition = ''; // Re-enable transition after drag
+        });
+
+        // Event Listeners for Dev Mode Password
+        unlockDevModeButton.addEventListener('click', () => {
+            if (devModePasswordInput.value === DEV_PASSWORD) {
+                toggleDevMode();
+            } else {
+                devPasswordMessage.textContent = "Incorrect password.";
+            }
+        });
+
+        // Dev Mode Toggles
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'D' && e.ctrlKey && e.shiftKey) { // Ctrl+Shift+D to toggle dev mode
+                if (devMode) {
+                    toggleDevMode(); // Turn off if already on
+                } else {
+                    // Show password section if not in dev mode
+                    devModePasswordSection.style.display = 'flex';
+                    devPasswordMessage.textContent = 'Enter Dev Mode Password:';
+                    devPasswordMessage.style.color = '#cbd5e0';
+                    devModePasswordInput.focus();
+                }
+            }
+        });
 
         // Event Listeners
         startGameButton.addEventListener('click', startGame);
         collectButton.addEventListener('click', collectWinnings);
+        minesGridEl.addEventListener('click', handleCellClick); // Initial listener, will be updated by updateGridEventListeners
 
-        // Dev Mode Event Listeners
-        unlockDevModeButton.addEventListener('click', unlockDevMode);
-        devModePasswordInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                unlockDevMode();
-            }
-        });
-        giveCoinsButton.addEventListener('click', () => window.addCoins(1000));
-        setCoinsButton.addEventListener('click', setCoinsTo);
-        showMinesToggle.addEventListener('change', () => toggleShowMinesVisual(showMinesToggle.checked));
-        editMinesToggle.addEventListener('change', toggleEditMinesMode);
-        easyModeButton.addEventListener('click', () => {
-            if (devMode) {
-                const isActive = easyModeButton.dataset.active === 'true';
-                easyModeButton.dataset.active = isActive ? 'false' : 'true';
-                easyModeButton.style.backgroundColor = isActive ? '' : '#4299e1';
-                messageEl.textContent = isActive ? "Easy Mode Deactivated." : "Easy Mode Activated! Next game will have 1 mine. 🌟";
-                messageEl.classList.remove('lose');
-                messageEl.classList.add('win');
-            }
-        });
-        instantRevealAllButton.addEventListener('click', instantRevealAll); // New
-        forceWinButton.addEventListener('click', forceWin); // New
-        forceLoseButton.addEventListener('click', forceLose); // New
-        luckyMineToggle.addEventListener('change', () => { // NEW: Lucky Mine Toggle Listener
-            luckyMineForAutobetActive = luckyMineToggle.checked;
-            messageEl.textContent = luckyMineForAutobetActive ? "Lucky Mine (Autobet) Activated. 😈" : "Lucky Mine (Autobet) Deactivated. 😇";
-            messageEl.classList.remove('lose', 'win');
-            if (luckyMineForAutobetActive) messageEl.classList.add('lose'); else messageEl.classList.add('win');
-        });
-
+        // NEW: Instant Bet Button Event Listener
+        instantBetButton.addEventListener('click', instantBet);
 
         // Autobet Event Listeners
         autobetToggle.addEventListener('change', toggleAutobetEnabled);
@@ -1274,6 +1424,7 @@
 
         // Initial setup
         updateCoinDisplay();
+        loadStats(); // Load stats on page load
         generateGrid();
         updateDisplays();
         enableGameControls(true); // Call to set initial button states
