@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Baccarat Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #2c3e50;
+      color: #ecf0f1;
+      padding: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    .result, .cards {
+      margin-top: 20px;
+      font-size: 20px;
+    }
+    .cards span {
+      display: inline-block;
+      margin: 0 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Baccarat Game</h1>
+  <button onclick="playGame()">Deal Cards</button>
+
+  <div class="cards" id="cardsDisplay"></div>
+  <div class="result" id="resultDisplay"></div>
+
+  <script>
+    const suits = ['♠', '♥', '♦', '♣'];
+    const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+    function getCardValue(rank) {
+      if (rank === 'A') return 1;
+      if (['10', 'J', 'Q', 'K'].includes(rank)) return 0;
+      return parseInt(rank);
+    }
+
+    function drawCard() {
+      const rank = ranks[Math.floor(Math.random() * ranks.length)];
+      const suit = suits[Math.floor(Math.random() * suits.length)];
+      return { rank, suit, value: getCardValue(rank) };
+    }
+
+    function totalPoints(cards) {
+      const total = cards.reduce((sum, card) => sum + card.value, 0);
+      return total % 10;
+    }
+
+    function playGame() {
+      const playerCards = [drawCard(), drawCard()];
+      const bankerCards = [drawCard(), drawCard()];
+
+      const playerPoints = totalPoints(playerCards);
+      const bankerPoints = totalPoints(bankerCards);
+
+      let result = '';
+      if (playerPoints > bankerPoints) result = '🏆 Player Wins!';
+      else if (bankerPoints > playerPoints) result = '🏦 Banker Wins!';
+      else result = '🤝 Tie!';
+
+      document.getElementById('cardsDisplay').innerHTML = `
+        <strong>Player:</strong> ${formatCards(playerCards)} = ${playerPoints} <br>
+        <strong>Banker:</strong> ${formatCards(bankerCards)} = ${bankerPoints}
+      `;
+
+      document.getElementById('resultDisplay').innerText = result;
+    }
+
+    function formatCards(cards) {
+      return cards.map(c => `<span>[${c.rank}${c.suit}]</span>`).join('');
+    }
+  </script>
+</body>
+</html>
