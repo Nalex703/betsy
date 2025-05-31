@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coin Flip Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a202c; /* Dark background */
+            margin: 0;
+            color: #e2e8f0; /* Light text color for dark background */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .game-container {
+            background-color: #2d3748; /* Darker grey */
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #4299e1; /* Blue */
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .coin-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.2em;
+            background-color: #4a5568; /* Slightly lighter dark grey */
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .coin-area {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background-color: #d69e2e; /* Gold-like color for coin */
+            border: 5px solid #b7791f; /* Darker gold border */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3em;
+            font-weight: bold;
+            color: #2d3748; /* Dark text for coin */
+            margin: 20px auto;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.3);
+            transition: transform 0.5s ease-out; /* For spin animation */
+        }
+
+        .coin-area.spinning {
+            animation: spin-coin 1s ease-out forwards;
+        }
+
+        @keyframes spin-coin {
+            0% { transform: rotateY(0deg); }
+            50% { transform: rotateY(1800deg); } /* 5 full rotations */
+            100% { transform: rotateY(1800deg); } /* Ends at the final rotation */
+        }
+        
+        .betting-options {
+            margin-top: 30px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .betting-options button {
+            background-color: #38a169; /* Green */
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            flex-grow: 1;
+            max-width: 150px;
+        }
+
+        .betting-options button:hover:not(:disabled) {
+            background-color: #2f855a; /* Darker green on hover */
+            transform: translateY(-2px);
+        }
+
+        .betting-options button:disabled {
+            background-color: #718096; /* Disabled color */
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .bet-amount-area {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #4a5568;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            color: #e2e8f0;
+        }
+
+        .bet-amount-area p {
+            margin: 0;
+            font-size: 1.1em;
+        }
+
+        .bet-amount-area input[type="number"] {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 5px;
+            padding: 8px 12px;
+            color: #e2e8f0;
+            font-size: 1em;
+            width: 80px; /* Fixed width */
+            text-align: center;
+        }
+
+        .bet-amount-area button {
+            background-color: #d69e2e; /* Orange for 'Set Bet' */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .bet-amount-area button:hover:not(:disabled) {
+            background-color: #b7791f; /* Darker orange on hover */
+            transform: translateY(-2px);
+        }
+        
+        #message {
+            font-size: 1.4em;
+            font-weight: bold;
+            min-height: 1.5em;
+            margin-top: 25px;
+            margin-bottom: 25px;
+        }
+
+        #message.win {
+            color: #48bb78; /* Green for win */
+        }
+
+        #message.lose {
+            color: #e53e3e; /* Red for lose */
+        }
+
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .game-controls button {
+            background-color: #4299e1; /* Blue for spin/play again */
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            flex-grow: 1;
+            max-width: 150px;
+        }
+
+        .game-controls button:hover:not(:disabled) {
+            background-color: #3182ce; /* Darker blue on hover */
+            transform: translateY(-2px);
+        }
+
+        .game-controls button:disabled {
+            background-color: #718096; /* Disabled color */
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="coin-display" onclick="window.location.href='Buy_coins.html'">
+        Coins: <span id="coinCount"></span>
+    </div>
+
+    <div class="game-container">
+        <h1>Coin Flip</h1>
+
+        <div id="coinArea" class="coin-area">
+            ?
+        </div>
+
+        <div class="betting-options">
+            <button id="betHeadsBtn" class="bet-option-btn">Bet Heads</button>
+            <button id="betTailsBtn" class="bet-option-btn">Bet Tails</button>
+        </div>
+
+        <div class="bet-amount-area">
+            <p>Current Bet: <span id="currentBetDisplay">10</span></p>
+            <input type="number" id="betInput" value="10" min="1">
+            <button id="setBetBtn">Set Bet Amount</button>
+        </div>
+
+        <p id="message"></p>
+
+        <div class="game-controls">
+            <button id="flipBtn" disabled>Flip Coin</button>
+            <button id="playAgainBtn" class="hidden">Play Again</button>
+            <button class="back-button" onclick="window.history.back()">Go Back</button>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let coins = parseInt(localStorage.getItem('coins') || '1000');
+        let currentBetAmount = 10;
+        let activeBet = null; // 'heads' or 'tails'
+
+        // DOM elements
+        const coinCountDisplay = document.getElementById('coinCount');
+        const coinArea = document.getElementById('coinArea');
+        const betHeadsBtn = document.getElementById('betHeadsBtn');
+        const betTailsBtn = document.getElementById('betTailsBtn');
+        const betOptionButtons = document.querySelectorAll('.bet-option-btn');
+        const betInput = document.getElementById('betInput');
+        const currentBetDisplay = document.getElementById('currentBetDisplay');
+        const setBetBtn = document.getElementById('setBetBtn');
+        const messageEl = document.getElementById('message');
+        const flipBtn = document.getElementById('flipBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+
+        // --- Functions ---
+        function updateCoinDisplay() {
+            coinCountDisplay.textContent = coins;
+            localStorage.setItem('coins', coins);
+        }
+
+        function resetGameState() {
+            messageEl.textContent = "Place your bet!";
+            messageEl.className = ''; // Clear win/lose classes
+            coinArea.textContent = '?'; // Reset coin display
+            coinArea.classList.remove('spinning'); // Remove spinning animation class
+            flipBtn.disabled = true;
+            playAgainBtn.classList.add('hidden');
+            setBetBtn.disabled = false;
+            betInput.disabled = false;
+            betOptionButtons.forEach(button => button.disabled = false);
+            activeBet = null; // Clear any active bet
+            updateCoinDisplay();
+        }
+
+        function disableBettingControls() {
+            betInput.disabled = true;
+            setBetBtn.disabled = true;
+            betOptionButtons.forEach(button => button.disabled = true);
+        }
+
+        function handleBetPlacement(betSide) {
+            if (currentBetAmount <= 0) {
+                messageEl.textContent = "Please set a valid bet amount.";
+                messageEl.classList.add('lose'); 
+                return;
+            }
+            if (currentBetAmount > coins) {
+                messageEl.textContent = "You don't have enough coins for that bet!";
+                messageEl.classList.add('lose');
+                return;
+            }
+
+            activeBet = betSide;
+            messageEl.textContent = `Bet placed on ${activeBet.toUpperCase()}. Click Flip Coin!`;
+            messageEl.classList.remove('lose');
+            messageEl.classList.add('win'); 
+            flipBtn.disabled = false;
+            disableBettingControls(); // Disable betting buttons after placing bet
+        }
+
+        function flipCoin() {
+            if (activeBet === null) {
+                messageEl.textContent = "Please place a bet first!";
+                messageEl.classList.add('lose');
+                return;
+            }
+
+            flipBtn.disabled = true;
+            messageEl.textContent = "Flipping...";
+            messageEl.className = ''; 
+            coinArea.textContent = '?'; // Clear before spin
+
+            coinArea.classList.add('spinning');
+
+            setTimeout(() => {
+                const result = Math.random() < 0.5 ? 'heads' : 'tails';
+                coinArea.textContent = result.toUpperCase(); // Display result
+                coinArea.classList.remove('spinning'); // Stop animation
+
+                checkResult(result);
+                playAgainBtn.classList.remove('hidden');
+            }, 1000); // 1 second for flip animation
+        }
+
+        function checkResult(flipResult) {
+            if (activeBet === flipResult) {
+                coins += currentBetAmount;
+                messageEl.textContent = `It's ${flipResult.toUpperCase()}! You Win ${currentBetAmount} coins! 🎉`;
+                messageEl.classList.add('win');
+            } else {
+                coins -= currentBetAmount;
+                messageEl.textContent = `It's ${flipResult.toUpperCase()}! You Lose ${currentBetAmount} coins! 🥺`;
+                messageEl.classList.add('lose');
+            }
+            updateCoinDisplay();
+
+            // Disable flip button and enable play again
+            flipBtn.disabled = true;
+            playAgainBtn.classList.remove('hidden');
+        }
+
+        // --- Event Listeners ---
+
+        setBetBtn.addEventListener('click', () => {
+            let bet = parseInt(betInput.value);
+            if (isNaN(bet) || bet <= 0) {
+                messageEl.textContent = "Please enter a valid bet amount (must be positive).";
+                messageEl.classList.add('lose');
+                setBetBtn.disabled = true; 
+                return;
+            }
+            if (bet > coins) {
+                messageEl.textContent = "You don't have enough coins for that bet!";
+                messageEl.classList.add('lose');
+                setBetBtn.disabled = true; 
+                return;
+            }
+            currentBetAmount = bet;
+            currentBetDisplay.textContent = currentBetAmount;
+            messageEl.textContent = `Bet amount set to ${currentBetAmount}. Now choose Heads or Tails!`;
+            messageEl.classList.remove('lose');
+            messageEl.classList.add('win');
+            setBetBtn.disabled = false; 
+        });
+
+        betInput.addEventListener('input', () => {
+            const value = parseInt(betInput.value);
+            if (!isNaN(value) && value > 0 && value <= coins) {
+                setBetBtn.disabled = false;
+            } else {
+                setBetBtn.disabled = true;
+            }
+        });
+
+        betHeadsBtn.addEventListener('click', () => handleBetPlacement('heads'));
+        betTailsBtn.addEventListener('click', () => handleBetPlacement('tails'));
+        
+        flipBtn.addEventListener('click', flipCoin);
+        playAgainBtn.addEventListener('click', resetGameState);
+
+        // Initial setup
+        resetGameState();
+    </script>
+</body>
+</html>
