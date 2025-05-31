@@ -1,13 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
+    <link rel="stylesheet" href="styles.css">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Betsy | Online Casino </title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .coin-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.2em;
+            background-color: #333;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        h1 {
+            color: #1a202c;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .game-links {
+            text-align: center;
+            margin-top: 30px;
+        }
+        .game-links a {
+            display: inline-block;
+            background-color: #007bff;
+            color: white;
+            padding: 15px 30px;
+            margin: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 1.1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .game-links a:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .game-links a:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
 </head>
 <body>
-<a href="Blackjack.html">Blackjack</a>
-<a href="mines.html">Mines </a>
-<a href="hilo.html">HiLo </a>
+    <div class="coin-display" onclick="window.location.href='Buy_coins.html'">
+        Coins: <span id="coinCount"></span>
+    </div>
+
+    <h1>Welcome to Betsy | Online Casino</h1>
+
+    <div class="game-links">
+        <a href="Blackjack.html">Blackjack</a>
+        <a href="hilo.html">High-Low</a>
+        <a href="mines.html">Mines</a>
+        <a href="roulette.html">Roulette</a>
+        <a href="flip.html">Flip</a>
+        </div>
+
+    <script>
+        // Function to update the coin display
+        function updateCoinDisplay() {
+            let coins = parseInt(localStorage.getItem('coins') || '1000'); // Default to 1000 if not found
+            document.getElementById('coinCount').textContent = coins;
+        }
+
+        // Call the function when the page loads
+        window.onload = updateCoinDisplay;
+    </script>
 </body>
 </html>
