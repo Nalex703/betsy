@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roulette Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a202c; /* Dark background */
+            margin: 0;
+            color: #e2e8f0; /* Light text color for dark background */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .game-container {
+            background-color: #2d3748; /* Darker grey */
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: #4299e1; /* Blue */
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .coin-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.2em;
+            background-color: #4a5568; /* Slightly lighter dark grey */
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .roulette-wheel {
+            width: 150px;
+            height: 150px;
+            background-color: #333;
+            border-radius: 50%;
+            border: 8px solid #000;
+            margin: 20px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3em;
+            font-weight: bold;
+            color: white;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.5);
+            transition: transform 3s ease-out; /* For spinning animation */
+            overflow: hidden; /* Hide overflow of text during spin */
+        }
+
+        .roulette-wheel.spinning {
+            animation: spin 3s ease-out forwards;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(3600deg); } /* Spin 10 full rotations */
+        }
+
+        .betting-options {
+            margin-top: 30px;
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .bet-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .bet-group label {
+            font-size: 1.1em;
+            color: #e2e8f0;
+        }
+
+        .bet-group input[type="number"] {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 5px;
+            padding: 8px 12px;
+            color: #e2e8f0;
+            font-size: 1em;
+            width: 70px;
+            text-align: center;
+        }
+
+        .betting-options button {
+            background-color: #38a169; /* Green */
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            flex-grow: 1;
+            max-width: 150px;
+        }
+
+        .betting-options button.red-bet {
+            background-color: #e53e3e; /* Red */
+        }
+        .betting-options button.black-bet {
+            background-color: #000; /* Black */
+        }
+
+        .betting-options button:hover:not(:disabled) {
+            background-color: #2f855a; /* Darker green on hover */
+            transform: translateY(-2px);
+        }
+        .betting-options button.red-bet:hover:not(:disabled) {
+            background-color: #c53030;
+        }
+        .betting-options button.black-bet:hover:not(:disabled) {
+            background-color: #222;
+        }
+
+
+        .betting-options button:disabled {
+            background-color: #718096; /* Disabled color */
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .bet-amount-area {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #4a5568;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            color: #e2e8f0;
+        }
+
+        .bet-amount-area p {
+            margin: 0;
+            font-size: 1.1em;
+        }
+
+        .bet-amount-area input[type="number"] {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 5px;
+            padding: 8px 12px;
+            color: #e2e8f0;
+            font-size: 1em;
+            width: 80px; /* Fixed width */
+            text-align: center;
+        }
+
+        .bet-amount-area button {
+            background-color: #d69e2e; /* Orange for 'Set Bet' */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .bet-amount-area button:hover:not(:disabled) {
+            background-color: #b7791f; /* Darker orange on hover */
+            transform: translateY(-2px);
+        }
+
+        #message {
+            font-size: 1.4em;
+            font-weight: bold;
+            min-height: 1.5em;
+            margin-top: 25px;
+            margin-bottom: 25px;
+        }
+
+        #message.win {
+            color: #48bb78; /* Green for win */
+        }
+
+        #message.lose {
+            color: #e53e3e; /* Red for lose */
+        }
+
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .game-controls button {
+            background-color: #4299e1; /* Blue for spin/play again */
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            flex-grow: 1;
+            max-width: 150px;
+        }
+
+        .game-controls button:hover:not(:disabled) {
+            background-color: #3182ce; /* Darker blue on hover */
+            transform: translateY(-2px);
+        }
+
+        .game-controls button:disabled {
+            background-color: #718096; /* Disabled color */
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="coin-display" onclick="window.location.href='Buy_coins.html'">
+        Coins: <span id="coinCount"></span>
+    </div>
+
+    <div class="game-container">
+        <h1>Roulette</h1>
+
+        <div id="rouletteWheel" class="roulette-wheel">
+            <span id="winningNumberDisplay"></span>
+        </div>
+
+        <div class="betting-options">
+            <div class="bet-group">
+                <label for="numberBetInput">Bet on Number (0-36):</label>
+                <input type="number" id="numberBetInput" min="0" max="36" placeholder="e.g., 17">
+                <button id="placeNumberBetBtn" class="bet-option-btn">Place Number Bet</button>
+            </div>
+            <div class="bet-group">
+                <button id="betRedBtn" class="bet-option-btn red-bet">Bet Red</button>
+                <button id="betBlackBtn" class="bet-option-btn black-bet">Bet Black</button>
+            </div>
+            <div class="bet-group">
+                <button id="betOddBtn" class="bet-option-btn">Bet Odd</button>
+                <button id="betEvenBtn" class="bet-option-btn">Bet Even</button>
+            </div>
+        </div>
+
+        <div class="bet-amount-area">
+            <p>Current Bet: <span id="currentBetDisplay">10</span></p>
+            <input type="number" id="betInput" value="10" min="1">
+            <button id="setBetBtn">Set Bet Amount</button>
+        </div>
+
+        <p id="message"></p>
+
+        <div class="game-controls">
+            <button id="spinBtn" disabled>Spin Wheel</button>
+            <button id="playAgainBtn" class="hidden">Play Again</button>
+            <button class="back-button" onclick="window.history.back()">Go Back</button>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let coins = parseInt(localStorage.getItem('coins') || '1000');
+        let currentBetAmount = 10;
+        let activeBet = { type: null, value: null }; // e.g., {type: 'number', value: 17}, {type: 'color', value: 'red'}
+
+        // DOM elements
+        const coinCountDisplay = document.getElementById('coinCount');
+        const rouletteWheel = document.getElementById('rouletteWheel');
+        const winningNumberDisplay = document.getElementById('winningNumberDisplay');
+        const numberBetInput = document.getElementById('numberBetInput');
+        const placeNumberBetBtn = document.getElementById('placeNumberBetBtn');
+        const betRedBtn = document.getElementById('betRedBtn');
+        const betBlackBtn = document.getElementById('betBlackBtn');
+        const betOddBtn = document.getElementById('betOddBtn');
+        const betEvenBtn = document.getElementById('betEvenBtn');
+        const betOptionButtons = document.querySelectorAll('.bet-option-btn');
+        const betInput = document.getElementById('betInput');
+        const currentBetDisplay = document.getElementById('currentBetDisplay');
+        const setBetBtn = document.getElementById('setBetBtn');
+        const messageEl = document.getElementById('message');
+        const spinBtn = document.getElementById('spinBtn');
+        const playAgainBtn = document.getElementById('playAgainBtn');
+
+        // Roulette numbers and their colors (European Roulette)
+        const rouletteNumbers = [
+            { number: 0, color: 'green' },
+            { number: 1, color: 'red' }, { number: 2, color: 'black' }, { number: 3, color: 'red' },
+            { number: 4, color: 'black' }, { number: 5, color: 'red' }, { number: 6, color: 'black' },
+            { number: 7, color: 'red' }, { number: 8, color: 'black' }, { number: 9, color: 'red' },
+            { number: 10, color: 'black' }, { number: 11, color: 'black' }, { number: 12, color: 'red' },
+            { number: 13, color: 'black' }, { number: 14, color: 'red' }, { number: 15, color: 'black' },
+            { number: 16, color: 'red' }, { number: 17, color: 'black' }, { number: 18, color: 'red' },
+            { number: 19, color: 'red' }, { number: 20, color: 'black' }, { number: 21, color: 'red' },
+            { number: 22, color: 'black' }, { number: 23, color: 'red' }, { number: 24, color: 'black' },
+            { number: 25, color: 'red' }, { number: 26, color: 'black' }, { number: 27, color: 'red' },
+            { number: 28, color: 'black' }, { number: 29, color: 'black' }, { number: 30, color: 'red' },
+            { number: 31, color: 'black' }, { number: 32, color: 'red' }, { number: 33, color: 'black' },
+            { number: 34, color: 'red' }, { number: 35, color: 'black' }, { number: 36, color: 'red' }
+        ];
+
+        // --- Functions ---
+        function updateCoinDisplay() {
+            coinCountDisplay.textContent = coins;
+            localStorage.setItem('coins', coins);
+        }
+
+        function resetGameState() {
+            messageEl.textContent = "Place your bet!";
+            messageEl.className = ''; // Clear win/lose classes
+            winningNumberDisplay.textContent = ''; // Clear previous winning number
+            rouletteWheel.classList.remove('spinning'); // Remove spinning animation class
+            spinBtn.disabled = true;
+            playAgainBtn.classList.add('hidden');
+            setBetBtn.disabled = false;
+            betInput.disabled = false;
+            numberBetInput.disabled = false;
+            placeNumberBetBtn.disabled = false;
+
+            betOptionButtons.forEach(button => button.disabled = false);
+            activeBet = { type: null, value: null }; // Clear any active bet
+            updateCoinDisplay();
+        }
+
+        function disableBettingControls() {
+            betInput.disabled = true;
+            setBetBtn.disabled = true;
+            numberBetInput.disabled = true;
+            placeNumberBetBtn.disabled = true;
+            betOptionButtons.forEach(button => button.disabled = true);
+        }
+
+        function handleBetPlacement(betType, betValue = null) {
+            if (currentBetAmount <= 0) {
+                messageEl.textContent = "Please set a valid bet amount.";
+                messageEl.classList.add('lose'); // Use lose class for warning
+                return;
+            }
+            if (currentBetAmount > coins) {
+                messageEl.textContent = "You don't have enough coins for that bet!";
+                messageEl.classList.add('lose');
+                return;
+            }
+
+            activeBet = { type: betType, value: betValue };
+            messageEl.textContent = `Bet placed: ${betType} ${betValue !== null ? betValue : ''}. Click Spin!`;
+            messageEl.classList.remove('lose');
+            messageEl.classList.add('win'); // Use win class for successful bet placement
+            spinBtn.disabled = false;
+            disableBettingControls(); // Disable betting buttons after placing bet
+        }
+
+        function spinWheel() {
+            if (activeBet.type === null) {
+                messageEl.textContent = "Please place a bet first!";
+                messageEl.classList.add('lose');
+                return;
+            }
+
+            spinBtn.disabled = true;
+            messageEl.textContent = "Spinning...";
+            messageEl.className = ''; // Clear previous message style
+            winningNumberDisplay.textContent = ''; // Clear previous winning number during spin
+
+            rouletteWheel.classList.add('spinning');
+
+            // Simulate spin delay
+            setTimeout(() => {
+                const randomIndex = Math.floor(Math.random() * rouletteNumbers.length);
+                const winningNumber = rouletteNumbers[randomIndex];
+                winningNumberDisplay.textContent = winningNumber.number;
+                rouletteWheel.classList.remove('spinning'); // Stop animation
+
+                checkResult(winningNumber);
+                playAgainBtn.classList.remove('hidden');
+            }, 3000); // 3 seconds for spin animation
+        }
+
+        function checkResult(winningNumber) {
+            let win = false;
+            let multiplier = 0; // How many times the bet is multiplied
+
+            if (activeBet.type === 'number') {
+                if (activeBet.value === winningNumber.number) {
+                    win = true;
+                    multiplier = 35; // 35:1 payout for single number
+                }
+            } else if (activeBet.type === 'color') {
+                // Green (0) is neither red nor black
+                if (winningNumber.number !== 0 && activeBet.value === winningNumber.color) {
+                    win = true;
+                    multiplier = 1; // 1:1 payout for color
+                }
+            } else if (activeBet.type === 'parity') {
+                // 0 is neither odd nor even in traditional roulette betting
+                if (winningNumber.number !== 0) {
+                    const isOdd = winningNumber.number % 2 !== 0;
+                    if ((activeBet.value === 'odd' && isOdd) || (activeBet.value === 'even' && !isOdd)) {
+                        win = true;
+                        multiplier = 1; // 1:1 payout for odd/even
+                    }
+                }
+            }
+
+            if (win) {
+                const winnings = currentBetAmount * multiplier;
+                coins += winnings;
+                messageEl.textContent = `You Win! ${winningNumber.number} (${winningNumber.color.toUpperCase()}). You won ${winnings} coins! 🎉`;
+                messageEl.classList.add('win');
+            } else {
+                coins -= currentBetAmount;
+                messageEl.textContent = `You Lose! The number was ${winningNumber.number} (${winningNumber.color.toUpperCase()}). 🥺`;
+                messageEl.classList.add('lose');
+            }
+            updateCoinDisplay();
+
+            // Disable spin button and enable play again
+            spinBtn.disabled = true;
+            playAgainBtn.classList.remove('hidden');
+        }
+
+        // --- Event Listeners ---
+
+        setBetBtn.addEventListener('click', () => {
+            let bet = parseInt(betInput.value);
+            if (isNaN(bet) || bet <= 0) {
+                messageEl.textContent = "Please enter a valid bet amount (must be positive).";
+                messageEl.classList.add('lose');
+                setBetBtn.disabled = true; // Disable if invalid
+                return;
+            }
+            if (bet > coins) {
+                messageEl.textContent = "You don't have enough coins for that bet!";
+                messageEl.classList.add('lose');
+                setBetBtn.disabled = true; // Disable if not enough coins
+                return;
+            }
+            currentBetAmount = bet;
+            currentBetDisplay.textContent = currentBetAmount;
+            messageEl.textContent = `Bet amount set to ${currentBetAmount}. Now choose your bet!`;
+            messageEl.classList.remove('lose');
+            messageEl.classList.add('win');
+            setBetBtn.disabled = false; // Re-enable if valid
+        });
+
+        betInput.addEventListener('input', () => {
+            const value = parseInt(betInput.value);
+            // Enable setBetBtn only if input is a valid positive number and less than or equal to coins
+            if (!isNaN(value) && value > 0 && value <= coins) {
+                setBetBtn.disabled = false;
+            } else {
+                setBetBtn.disabled = true;
+            }
+        });
+
+        placeNumberBetBtn.addEventListener('click', () => {
+            let num = parseInt(numberBetInput.value);
+            if (isNaN(num) || num < 0 || num > 36) {
+                messageEl.textContent = "Please enter a number between 0 and 36.";
+                messageEl.classList.add('lose');
+                return;
+            }
+            handleBetPlacement('number', num);
+        });
+
+        betRedBtn.addEventListener('click', () => handleBetPlacement('color', 'red'));
+        betBlackBtn.addEventListener('click', () => handleBetPlacement('color', 'black'));
+        betOddBtn.addEventListener('click', () => handleBetPlacement('parity', 'odd'));
+        betEvenBtn.addEventListener('click', () => handleBetPlacement('parity', 'even'));
+
+        spinBtn.addEventListener('click', spinWheel);
+        playAgainBtn.addEventListener('click', resetGameState);
+
+        // Initial setup
+        resetGameState();
+    </script>
+</body>
+</html>

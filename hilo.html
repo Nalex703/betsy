@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High-Low Card Game</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #1a202c; /* Dark background */
+            margin: 0;
+            color: #e2e8f0; /* Light text color for dark background */
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .game-container {
+            background-color: #2d3748; /* Darker grey */
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            text-align: center;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #4299e1; /* Blue */
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+
+        .coin-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.2em;
+            background-color: #4a5568; /* Slightly lighter dark grey */
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        /* --- NEW STYLES FOR CARD DISPLAY --- */
+        .all-cards-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px; /* Gap between history and active cards */
+            margin-bottom: 30px; /* From original card-display */
+            flex-wrap: wrap; /* Allow wrapping if history gets too long */
+        }
+
+        .card-history {
+            display: flex;
+            gap: 5px; /* Small gap between historical cards */
+            flex-shrink: 1; /* Allow history to shrink */
+            overflow-x: auto; /* Allow scrolling for many cards */
+            padding-bottom: 5px; /* Space for scrollbar */
+        }
+
+        .card-history .card {
+            /* Style for historical cards - smaller, less prominent */
+            width: 80px; /* Smaller */
+            height: 120px; /* Smaller */
+            font-size: 1.8em; /* Smaller font */
+            opacity: 0.7; /* Slightly faded */
+            border: 1px solid #636b77; /* Thinner border */
+            flex-shrink: 0; /* Prevent cards from shrinking too much */
+        }
+
+        .active-card-display {
+            display: flex;
+            gap: 10px; /* Gap between current and next (active) cards */
+            flex-shrink: 0; /* Prevent active display from shrinking */
+        }
+        /* --- END NEW STYLES --- */
+
+
+        .card {
+            width: 120px;
+            height: 180px;
+            border: 3px solid #636b77;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 3em;
+            font-weight: bold;
+            background-color: #cbd5e0; /* Lighter color for card front */
+            color: #2d3748; /* Darker text for contrast */
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease-out;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        .card:hover:not(.hidden) {
+            transform: translateY(-5px);
+        }
+
+        .card.hidden {
+            background-color: #4a5568; /* Back of the card */
+            color: #4a5568; /* Match color to hide text */
+            cursor: default;
+        }
+
+        .buttons {
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .buttons button {
+            background-color: #38a169; /* Green */
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            flex-grow: 1;
+            max-width: 150px;
+        }
+
+        .buttons button:hover:not(:disabled) {
+            background-color: #2f855a; /* Darker green on hover */
+            transform: translateY(-2px);
+        }
+
+        .buttons button:active:not(:disabled) {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .buttons button:disabled {
+            background-color: #718096; /* Disabled color */
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        #message {
+            font-size: 1.4em;
+            font-weight: bold;
+            min-height: 1.5em;
+            margin-bottom: 25px;
+        }
+
+        #message.correct {
+            color: #48bb78; /* Green for win */
+        }
+
+        #message.incorrect {
+            color: #e53e3e; /* Red for lose */
+        }
+
+        #newGame {
+            background-color: #4299e1; /* Blue for replay */
+        }
+
+        #newGame:hover:not(:disabled) {
+            background-color: #3182ce; /* Darker blue on hover */
+        }
+        
+        #cashOutBtn { /* Style for the new Cash Out button */
+            background-color: #d69e2e; /* Orange */
+        }
+        #cashOutBtn:hover:not(:disabled) {
+            background-color: #b7791f; /* Darker Orange */
+        }
+
+        .hidden {
+            display: none;
+        }
+        
+        .betting-area {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #4a5568;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            color: #e2e8f0;
+        }
+
+        .betting-area p {
+            margin: 0;
+            font-size: 1.1em;
+        }
+
+        .betting-area input[type="number"] {
+            background-color: #2d3748;
+            border: 1px solid #4a5568;
+            border-radius: 5px;
+            padding: 8px 12px;
+            color: #e2e8f0;
+            font-size: 1em;
+            width: 80px; /* Fixed width */
+            text-align: center;
+        }
+
+        .betting-area button {
+            background-color: #d69e2e; /* Orange for 'Place Bet' */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .betting-area button:hover:not(:disabled) {
+            background-color: #b7791f; /* Darker orange on hover */
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="coin-display" onclick="window.location.href='Buy_coins.html'">
+        Coins: <span id="coinCount"></span>
+    </div>
+
+    <div class="game-container">
+        <h1>High-Low Card Game</h1>
+        <div class="all-cards-container">
+            <div id="cardHistory" class="card-history">
+                </div>
+            <div id="activeCardDisplay" class="active-card-display">
+                <div id="currentCard" class="card"></div>
+                <div id="nextCard" class="card hidden">?</div>
+            </div>
+        </div>
+        <div class="buttons">
+            <button id="guessHigher">Higher</button>
+            <button id="guessLower">Lower</button>
+            <button id="cashOutBtn" class="hidden">Cash Out</button>
+        </div>
+        <p id="message"></p>
+        <button id="newGame" class="hidden">Play Again</button>
+        <div class="betting-area">
+            <p>Current Bet: <span id="currentBetDisplay">10</span></p>
+            <input type="number" id="betInput" value="10" min="1">
+            <button id="placeBetBtn">Place Bet</button>
+        </div>
+    </div>
+
+    <script>
+        const suits = ['♠️', '♥️', '♦️', '♣️'];
+        const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
+
+        let deck = [];
+        let currentCard = null;
+        let nextCard = null;
+        let coins = parseInt(localStorage.getItem('coins') || '1000');
+        let currentBet = 10;
+
+        const currentCardEl = document.getElementById('currentCard');
+        const nextCardEl = document.getElementById('nextCard');
+        const guessHigherBtn = document.getElementById('guessHigher');
+        const guessLowerBtn = document.getElementById('guessLower');
+        const messageEl = document.getElementById('message');
+        const newGameBtn = document.getElementById('newGame');
+        const coinCountDisplay = document.getElementById('coinCount');
+        const betInput = document.getElementById('betInput');
+        const currentBetDisplay = document.getElementById('currentBetDisplay');
+        const placeBetBtn = document.getElementById('placeBetBtn');
+        const cashOutBtn = document.getElementById('cashOutBtn');
+        
+        // --- NEW ELEMENT FOR CARD HISTORY ---
+        const cardHistoryEl = document.getElementById('cardHistory'); 
+
+        function updateCoinDisplay() {
+            coinCountDisplay.textContent = coins;
+            localStorage.setItem('coins', coins);
+        }
+
+        function createDeck() {
+            deck = [];
+            for (let suit of suits) {
+                for (let i = 0; i < ranks.length; i++) {
+                    let value = i + 1;
+                    if (ranks[i] === 'A') value = 1;
+                    if (ranks[i] === 'J') value = 11;
+                    if (ranks[i] === 'Q') value = 12;
+                    if (ranks[i] === 'K') value = 13;
+
+                    deck.push({
+                        rank: ranks[i],
+                        value: value,
+                        suit: suit
+                    });
+                }
+            }
+        }
+
+        function shuffleDeck() {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function startGame() {
+            createDeck();
+            shuffleDeck();
+            messageEl.className = ''; 
+            nextCardEl.classList.add('hidden');
+            nextCardEl.textContent = '?';
+            
+            // Clear card history for a new game
+            cardHistoryEl.innerHTML = ''; 
+
+            guessHigherBtn.disabled = true;
+            guessLowerBtn.disabled = true;
+            cashOutBtn.classList.add('hidden'); 
+            newGameBtn.classList.add('hidden'); 
+
+            placeBetBtn.disabled = false;
+            betInput.disabled = false;
+            betInput.value = currentBet; 
+
+            if (deck.length > 0) {
+                currentCard = deck.pop();
+                currentCardEl.textContent = `${currentCard.rank}${currentCard.suit}`;
+                currentCardEl.style.color = (currentCard.suit === '♥️' || currentCard.suit === '♦️') ? 'red' : 'black';
+            } else {
+                messageEl.textContent = "Something went wrong, no cards in deck!";
+            }
+            updateCoinDisplay();
+            messageEl.textContent = "Welcome! Place your bet to start the round.";
+            messageEl.classList.remove('correct', 'incorrect'); 
+        }
+
+        function revealNextCard() {
+            if (deck.length === 0) {
+                messageEl.textContent = "Ran out of cards! Click 'Play Again' to shuffle.";
+                guessHigherBtn.disabled = true;
+                guessLowerBtn.disabled = true;
+                cashOutBtn.classList.add('hidden');
+                newGameBtn.classList.remove('hidden');
+                placeBetBtn.disabled = false;
+                betInput.disabled = false;
+                return false;
+            }
+
+            nextCard = deck.pop();
+            nextCardEl.textContent = `${nextCard.rank}${nextCard.suit}`;
+            nextCardEl.style.color = (nextCard.suit === '♥️' || nextCard.suit === '♦️') ? 'red' : 'black';
+            nextCardEl.classList.remove('hidden'); 
+
+            return true;
+        }
+
+        function checkGuess(guess) {
+            guessHigherBtn.disabled = true;
+            guessLowerBtn.disabled = true;
+            cashOutBtn.disabled = true; 
+
+            if (!revealNextCard()) {
+                cashOutBtn.disabled = false;
+                return;
+            }
+
+            let isCorrect;
+            
+            if (nextCard.value === currentCard.value) {
+                messageEl.textContent = `It's a tie (${currentCard.rank})! No win. 🤷‍♀️`;
+                messageEl.classList.add('incorrect'); 
+                isCorrect = false; 
+            } else if (guess === 'higher') {
+                isCorrect = nextCard.value > currentCard.value;
+            } else {
+                isCorrect = nextCard.value < currentCard.value;
+            }
+
+            if (isCorrect) {
+                messageEl.textContent = 'You got it! Streak continues! 🎉';
+                messageEl.classList.remove('incorrect');
+                messageEl.classList.add('correct');
+                coins += currentBet;
+                updateCoinDisplay();
+
+                // --- ADD OLD CURRENT CARD TO HISTORY ---
+                const oldCurrentCardEl = document.createElement('div');
+                oldCurrentCardEl.classList.add('card');
+                oldCurrentCardEl.textContent = `${currentCard.rank}${currentCard.suit}`;
+                oldCurrentCardEl.style.color = (currentCard.suit === '♥️' || currentCard.suit === '♦️') ? 'red' : 'black';
+                cardHistoryEl.appendChild(oldCurrentCardEl);
+                // --- END ADD TO HISTORY ---
+
+                currentCard = nextCard; 
+                currentCardEl.textContent = `${currentCard.rank}${currentCard.suit}`;
+                currentCardEl.style.color = (currentCard.suit === '♥️' || currentCard.suit === '♦️') ? 'red' : 'black';
+                
+                nextCardEl.classList.add('hidden'); 
+                nextCardEl.textContent = '?'; 
+
+                guessHigherBtn.disabled = false; 
+                guessLowerBtn.disabled = false;
+                cashOutBtn.classList.remove('hidden'); 
+                cashOutBtn.disabled = false; 
+                newGameBtn.classList.add('hidden'); 
+
+            } else { 
+                if (nextCard.value !== currentCard.value) { 
+                    messageEl.textContent = 'Nope, wrong guess. You lose! 🥺';
+                }
+                messageEl.classList.remove('correct');
+                messageEl.classList.add('incorrect');
+                coins -= currentBet;
+                updateCoinDisplay();
+
+                // --- CLEAR CARD HISTORY ON LOSE/TIE ---
+                cardHistoryEl.innerHTML = '';
+                // --- END CLEAR HISTORY ---
+
+                guessHigherBtn.disabled = true;
+                guessLowerBtn.disabled = true;
+                cashOutBtn.classList.add('hidden'); 
+                newGameBtn.classList.remove('hidden'); 
+                placeBetBtn.disabled = false; 
+                betInput.disabled = false; 
+            }
+        }
+
+        function cashOut() {
+            messageEl.textContent = `You cashed out with ${coins} coins! Nice streak! 🎉`;
+            messageEl.classList.remove('incorrect');
+            messageEl.classList.add('correct');
+
+            // --- CLEAR CARD HISTORY ON CASH OUT ---
+            cardHistoryEl.innerHTML = '';
+            // --- END CLEAR HISTORY ---
+
+            guessHigherBtn.disabled = true;
+            guessLowerBtn.disabled = true;
+            cashOutBtn.classList.add('hidden'); 
+            newGameBtn.classList.remove('hidden'); 
+            placeBetBtn.disabled = false; 
+            betInput.disabled = false; 
+        }
+
+        // Event Listeners
+        guessHigherBtn.addEventListener('click', () => checkGuess('higher'));
+        guessLowerBtn.addEventListener('click', () => checkGuess('lower'));
+        newGameBtn.addEventListener('click', startGame);
+        cashOutBtn.addEventListener('click', cashOut); 
+
+        placeBetBtn.addEventListener('click', () => {
+            let bet = parseInt(betInput.value);
+            if (isNaN(bet) || bet <= 0) {
+                messageEl.textContent = "Please enter a valid bet amount.";
+                messageEl.classList.add('incorrect');
+                return;
+            }
+            if (bet > coins) {
+                messageEl.textContent = "You don't have enough coins for that bet!";
+                messageEl.classList.add('incorrect');
+                return;
+            }
+            currentBet = bet;
+            currentBetDisplay.textContent = currentBet;
+            messageEl.textContent = `Bet set to ${currentBet}. Make your guess!`;
+            messageEl.classList.remove('incorrect');
+            messageEl.classList.add('correct');
+            
+            guessHigherBtn.disabled = false;
+            guessLowerBtn.disabled = false;
+            placeBetBtn.disabled = true;
+            betInput.disabled = true;
+        });
+
+        betInput.addEventListener('input', () => {
+            const value = parseInt(betInput.value);
+            if (!isNaN(value) && value > 0 && value <= coins) {
+                placeBetBtn.disabled = false;
+            } else {
+                placeBetBtn.disabled = true;
+            }
+        });
+
+        startGame();
+    </script>
+</body>
+</html>

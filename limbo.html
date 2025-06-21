@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limbo</title>
+</head>
+<body>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .limbo_multiplier {
+            font-size: 24px;
+            color: #333;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .limbo_play_button {
+            display: block;
+            width: 200px;
+            height: 50px;
+            margin: 20px auto;
+            font-size: 18px;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+
+    <script>
+        let coins = parseFloat(localStorage.getItem('coins') || '1000.0');
+        console.log(coins);
+
+        function skewedRandom() {
+            const min = 1.01;
+            const max = 100.0;  // Max value for high multipliers set to 100x (instead of 500x)
+
+            // Choose between low or high path (99% low, 1% high)
+            const highChance = 0.01; // 1% chance for high path
+            const isHighRoll = Math.random() < highChance;
+
+            let value;
+
+            if (isHighRoll) {
+                // High value path — generate between 20x and 100x
+                // Adjust range to limit extreme high values
+                let r = Math.random(); // 0–1
+                value = 20 + r * (max - 15); // Skew toward lower end of high values (20 to 100)
+            } else {
+                // Low value path — between 1.01x and 20x
+                // Use exponential curve to get natural distribution
+                let r = Math.pow(Math.random(), 7); // Skew more to favor low values
+                value = min + r * (20 - min);  // Skew to keep values mostly in 1.01x–20x range
+            }
+
+            return value.toFixed(2);
+        }
+
+        function randomizeMultiplier() {
+            // Play the sound effect when the button is clicked
+            const audio = document.getElementById('limbo-roll-sound');
+            
+            // Ensure audio resets to the beginning every time
+            audio.currentTime = 0;
+            audio.play().catch((error) => {
+                console.error('Error playing sound:', error);
+            });
+
+            const multiplier = skewedRandom();
+            document.getElementById('multiplier').textContent = multiplier + 'x';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('multiplier').textContent = skewedRandom() + 'x';
+        });
+    </script>
+
+    <div class="limbo_multiplier">Multiplier: <span id="multiplier"></span></div>
+
+    <audio id="limbo-roll-sound" src="limbo_roll.mp3" preload="auto"></audio>
+
+    <button class="limbo_play_button" onclick="randomizeMultiplier()">Play</button>
+</body>
+</html>

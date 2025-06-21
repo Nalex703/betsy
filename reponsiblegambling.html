@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Online Casino - Responsible Gambling</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #1c1c1c;
+      color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+    #hotline-button {
+      background-color: #ff4d4d;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      font-size: 1.2rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 2rem;
+      transition: background-color 0.3s ease;
+    }
+    #hotline-button:hover {
+      background-color: #e04343;
+    }
+    #hotline-info {
+      margin-top: 1.5rem;
+      font-size: 1.1rem;
+      color: #ffdede;
+    }
+  </style>
+</head>
+<body>
+  <h1>Welcome to LuckySpin Casino 🎰</h1>
+  <p>Play safe. Play smart. If you're struggling, we're here to help.</p>
+  <button id="hotline-button">Loading local hotline...</button>
+  <div id="hotline-info"></div>
+
+  <script>
+    const hotlines = {
+      "US": "1-800-GAMBLER",
+      "UK": "0808 8020 133",
+      "ES": "900 533 025",
+      "FR": "09 74 75 13 13",
+      "DE": "0800 137 27 00",
+      "CA": "1-866-531-2600",
+      "AU": "1800 858 858",
+      "NZ": "0800 654 655",
+      "IE": "1800 753 753",
+      "IT": "800 558822",
+      "SE": "020-819 100",
+      "NO": "800 800 40",
+      "DK": "7022 2875",
+      "FI": "0800 100 101",
+      "NL": "0800-2400080",
+      "BE": "0800 35 777",
+      "CH": "0800 040 080",
+      "AT": "0800 20 20 16",
+      "PT": "1414",
+      "PL": "800 100 100",
+      "CZ": "800 350 000",
+      "SK": "0800 800 566",
+      "HU": "06 80 200 199",
+      "GR": "210 9237777",
+      "RO": "0800 800 099",
+      "BG": "0700 10 515",
+      "HR": "0800 8888",
+      "SI": "080 2002",
+      "RU": "8 800 200 0 122",
+      "BR": "0800 727 4104",
+      "AR": "0800 555 4260",
+      "MX": "800 911 2000",
+      "CL": "800 104 777",
+      "CO": "01 8000 111 445",
+      "PE": "0800 4 8000",
+      "UY": "0800 0767",
+      "ZA": "0800 006 008",
+      "KE": "1199",
+      "NG": "0800 8222 8222",
+      "IN": "1800 599 0019",
+      "CN": "400 161 9995",
+      "JP": "0570 783 019",
+      "KR": "1336",
+      "PH": "155-200",
+      "SG": "1800 6 668 668",
+      "MY": "03 7956 8145",
+      "TH": "1323",
+      "VN": "1900 6237",
+      "HK": "1834 633",
+      "ID": "021 500 454",
+      "AE": "800 HOPE (800 4673)",
+      "SA": "937",
+      "EG": "0800 888 0700",
+      "TR": "444 9801",
+      "IL": "1201",
+      "default": "Please check your local gambling support services."
+    };
+
+    const hotlineLinks = {
+  "US": "https://www.ncpgambling.org/help-treatment/",
+  "UK": "https://www.begambleaware.org",
+  "ES": "https://www.gambleaware.org",
+  "FR": "https://www.joueurs-info-service.fr",
+  "DE": "https://www.check-dein-spiel.de",
+  "CA": "https://www.gambleaware.org",                          
+  "AU": "https://www.gamblinghelponline.org.au",                   
+  "NZ": "https://www.gambleaware.org",                      
+  "IE": "https://www.problemgambling.ie",                          
+  "BR": "https://jogoresponsavel.org.br",                          
+  "ZA": "https://responsiblegambling.org.za",                      
+  "IN": "https://www.gambleaware.org",                        
+  "default": "https://www.gambleaware.org"                         
+};
+
+
+    async function getCountryCode() {
+      try {
+        const res = await fetch('http://ip-api.com/json/');
+        const data = await res.json();
+        return data.countryCode;
+      } catch (err) {
+        console.error("Location fetch failed:", err);
+        return null;
+      }
+    }
+
+    async function showHotline() {
+      const country = await getCountryCode();
+      const hotline = hotlines[country] || hotlines["default"];
+      const link = hotlineLinks[country] || hotlineLinks["default"];
+
+      const btn = document.getElementById("hotline-button");
+      const info = document.getElementById("hotline-info");
+
+      btn.textContent = `Need help? Call: ${hotline}`;
+      btn.onclick = () => window.open(link, '_blank');
+
+      info.textContent = country
+        ? `Detected country: ${country}`
+        : "Could not detect your location.";
+    }
+
+    showHotline();
+  </script>
+</body>
+</html>

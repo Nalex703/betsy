@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baccarat Game</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #0f3d0f; /* Dark green casino table color */
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding-top: 20px;
+            min-height: 100vh;
+        }
+
+        .baccarat-table {
+            background-color: #006000; /* Casino green felt */
+            border: 10px solid #5a3825; /* Wooden rail */
+            border-radius: 150px / 70px; /* Oval-like shape for a table */
+            padding: 30px;
+            width: 90%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .game-area {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start; /* Align items to the top of the hands */
+            margin-bottom: 30px;
+            min-height: 150px; /* Space for cards */
+        }
+
+        .hand-area {
+            width: 40%;
+            text-align: center;
+        }
+
+        .hand-area h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #f0c419; /* Gold accent */
+            font-size: 20px;
+            text-transform: uppercase;
+        }
+
+        .cards-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 110px; /* Height of a card */
+            background-color: rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 10px;
+            border: 1px dashed #f0c419;
+        }
+
+        .card {
+            background-color: #fff;
+            color: #333;
+            border: 1px solid #aaa;
+            border-radius: 8px;
+            width: 70px;
+            height: 100px;
+            margin: 0 5px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            padding: 5px;
+            /* JavaScript will fill these with suit and rank */
+        }
+        .card .rank {
+            font-size: 28px;
+        }
+        .card .suit {
+            font-size: 20px;
+        }
+        .card.red { color: #D00000; }
+        .card.black { color: #000; }
+
+
+        .scores-area {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        .scores-area span {
+            margin: 0 15px;
+            padding: 5px 10px;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+        .scores-area strong {
+            color: #f0c419;
+        }
+
+        .betting-area {
+            display: flex;
+            justify-content: center;
+            gap: 20px; /* Space between betting spots */
+            margin-bottom: 30px;
+        }
+
+        .bet-spot {
+            background-color: rgba(240, 196, 25, 0.2); /* Light gold transparent */
+            border: 2px solid #f0c419;
+            border-radius: 10px;
+            padding: 15px 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            min-width: 120px;
+        }
+        .bet-spot:hover {
+            background-color: rgba(240, 196, 25, 0.4);
+        }
+        .bet-spot h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: #fff;
+        }
+        .bet-spot .payout {
+            font-size: 0.9em;
+            color: #ccc;
+        }
+        .bet-spot .current-bet { /* JavaScript will update this */
+            font-size: 0.8em;
+            color: #f0c419;
+            min-height: 1.2em; /* Reserve space */
+            margin-top: 5px;
+        }
+
+
+        .chip-area {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .chip {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin: 0 5px;
+            cursor: pointer;
+            text-align: center;
+            line-height: 50px;
+            font-weight: bold;
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            border: 2px solid #fff;
+            transition: transform 0.2s;
+        }
+        .chip:hover {
+            transform: scale(1.1);
+        }
+        .chip.chip-1 { background-color: #d32f2f; border-color: #b71c1c;} /* Red */
+        .chip.chip-5 { background-color: #1976d2; border-color: #0d47a1;} /* Blue */
+        .chip.chip-25 { background-color: #388e3c; border-color: #1b5e20;} /* Green */
+        .chip.chip-100 { background-color: #5d4037; border-color: #3e2723;} /* Brown/Black */
+        .chip.selected-chip {
+            box-shadow: 0 0 15px #f0c419;
+            transform: scale(1.15);
+        }
+
+
+        .controls-area {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .controls-area button {
+            background-color: #f0c419;
+            color: #1a1a2e;
+            border: none;
+            padding: 12px 25px;
+            margin: 0 10px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .controls-area button:hover:not(:disabled) {
+            background-color: #e0b309;
+        }
+        .controls-area button:disabled {
+            background-color: #5a5a7a;
+            cursor: not-allowed;
+        }
+
+        .message-area {
+            text-align: center;
+            margin-top: 20px;
+            min-height: 2em; /* Reserve space for messages */
+            font-size: 18px;
+            color: #f0c419;
+            font-weight: bold;
+        }
+
+        /* For the shoe and discard pile (visual only here) */
+        .shoe-discard-area {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            text-align: right;
+        }
+        .shoe-discard-area div {
+            background: #7a5230; /* Wooden shoe color */
+            color: white;
+            padding: 10px;
+            margin-bottom:10px;
+            border-radius:5px;
+            font-size: 0.8em;
+            width: 100px;
+            text-align: center;
+        }
+        .shoe-discard-area #cards-remaining { /* JS updates this */
+            font-weight: bold;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="baccarat-table">
+        <div class="shoe-discard-area">
+            <div id="shoe">Shoe (<span id="cards-remaining">...</span>)</div>
+            <div id="discard-pile">Discard</div>
+        </div>
+
+        <div class="scores-area">
+            <span>Player: <strong id="player-score-display">0</strong></span>
+            <span>Banker: <strong id="banker-score-display">0</strong></span>
+        </div>
+
+        <div class="game-area">
+            <div class="hand-area" id="player-hand-area">
+                <h2>Player</h2>
+                <div class="cards-container" id="player-cards">
+                    </div>
+            </div>
+            <div class="hand-area" id="banker-hand-area">
+                <h2>Banker</h2>
+                <div class="cards-container" id="banker-cards">
+                    </div>
+            </div>
+        </div>
+
+        <div class="message-area" id="game-message">
+            Place your bets!
+        </div>
+
+        <div class="betting-area">
+            <div class="bet-spot" id="bet-player" data-bet-type="player">
+                <h3>Player</h3>
+                <p class="payout">Pays 1 to 1</p>
+                <div class="current-bet" id="player-bet-amount">$0</div>
+            </div>
+            <div class="bet-spot" id="bet-tie" data-bet-type="tie">
+                <h3>Tie</h3>
+                <p class="payout">Pays 8 to 1</p>
+                <div class="current-bet" id="tie-bet-amount">$0</div>
+            </div>
+            <div class="bet-spot" id="bet-banker" data-bet-type="banker">
+                <h3>Banker</h3>
+                <p class="payout">Pays 0.95 to 1 (5% Commission)</p>
+                <div class="current-bet" id="banker-bet-amount">$0</div>
+            </div>
+        </div>
+
+        <div class="chip-area" id="chip-selection">
+            <span class="chip chip-1" data-value="1">1</span>
+            <span class="chip chip-5" data-value="5">5</span>
+            <span class="chip chip-25" data-value="25">25</span>
+            <span class="chip chip-100" data-value="100">100</span>
+            <p style="font-size: 0.8em; margin-top: 10px;">Selected Chip: <span id="current-chip-value">1</span></p>
+        </div>
+
+        <div class="controls-area">
+            <button id="deal-button">Deal</button>
+            <button id="clear-bets-button">Clear Bets</button>
+            <button id="new-game-button" disabled>New Game</button>
+        </div>
+
+        <div style="text-align:center; margin-top:20px; font-size:0.9em;">
+            Player Balance: $<span id="player-balance">1000</span>
+        </div>
+    </div>
+
+    <script>
+    
+
+        
+        const playerCardsDiv = document.getElementById('player-cards');
+        const bankerCardsDiv = document.getElementById('banker-cards');
+        const playerScoreDisplay = document.getElementById('player-score-display');
+        const bankerScoreDisplay = document.getElementById('banker-score-display');
+        const gameMessage = document.getElementById('game-message');
+      
+        const dealButton = document.getElementById('deal-button');
+        const clearBetsButton = document.getElementById('clear-bets-button');
+        const newGameButton = document.getElementById('new-game-button');
+        const chipElements = document.querySelectorAll('.chip');
+        const betSpotElements = document.querySelectorAll('.bet-spot');
+        const playerBalanceDisplay = document.getElementById('player-balance');
+        const cardsRemainingDisplay = document.getElementById('cards-remaining');
+        const currentChipValueDisplay = document.getElementById('current-chip-value');
+
+
+    
+        let deck = [];
+        let playerHand = [];
+        let bankerHand = [];
+        let playerScore = 0;
+        let bankerScore = 0;
+        let bets = { player: 0, banker: 0, tie: 0 };
+        let currentSelectedChip = 1;
+        let playerBalance = 1000; 
+        const NUMBER_OF_DECKS = 6; 
+
+
+          function createDeck(numDecks) { /* Creates and returns a new shoe of cards */ }
+          function shuffleDeck(deck) { /* Shuffles the deck */ }
+          function dealCard(hand) { /* Deals a card from the deck to a specified hand, updates UI */ }
+          function calculateHandValue(hand) { /* Calculates Baccarat score for a hand */ }
+          function applyThirdCardRules() { /* Implements Baccarat's complex third card logic */ }
+          function determineWinner() { /* Determines Player, Banker, or Tie win */ }
+          function placeBet(betType, amount) { /* Handles placing a bet on a spot */ }
+          function clearAllBets() { /* Clears current bets from the table */ }
+          function processPayouts(winner) { /* Calculates and distributes winnings */ }
+          function updateUI() { /* Updates all visual elements: cards, scores, messages, bets, balance */ }
+          function resetRound() { /* Resets hands, scores for a new round, keeps bets if desired or clears */ }
+          function startNewGame() { /* Resets the entire game, including shoe and balance (or just shoe) */ }
+          function handleChipSelection(chipValue) { /* Sets the current chip for betting */ }
+
+
+        
+
+          dealButton.addEventListener('click', () => {
+              if (bets.player === 0 && bets.banker === 0 && bets.tie === 0) {
+                  gameMessage.textContent = "Please place a bet first!";
+                  return;
+              }
+              
+                console.log('Deal button clicked');
+                dealCards();
+          });
+
+          clearBetsButton.addEventListener('click', () => {
+                clearAllBets();
+                updateUI(); 
+                console.log('Clear Bets button clicked');
+          });
+
+          newGameButton.addEventListener('click', () => {
+                startNewGame(); 
+                console.log('New Game button clicked');
+          });
+
+          chipElements.forEach(chip => {
+              chip.addEventListener('click', () => {
+                  currentSelectedChip = parseInt(chip.dataset.value);
+                  currentChipValueDisplay.textContent = currentSelectedChip;
+                  
+                  chipElements.forEach(c => c.classList.remove('selected-chip'));
+                  chip.classList.add('selected-chip');
+                   console.log('Chip selected:', currentSelectedChip);
+              });
+          });
+
+          betSpotElements.forEach(spot => {
+              spot.addEventListener('click', () => {
+                  const betType = spot.dataset.betType;
+                    placeBet(betType, currentSelectedChip);
+      
+                    console.log('Bet placed on:', betType, 'for', currentSelectedChip);
+              });
+          });
+
+
+       
+          function initializeGame() {
+              deck = createDeck(NUMBER_OF_DECKS);
+              shuffleDeck(deck);
+              updateUI(); 
+              playerBalanceDisplay.textContent = playerBalance;
+              cardsRemainingDisplay.textContent = deck.length;
+
+              if(chipElements.length > 0) {
+                 chipElements[0].click();
+              }
+              gameMessage.textContent = "Welcome to Baccarat! Place your bets.";
+          }
+
+          initializeGame(); 
+
+        
+        
+        function renderCard(cardObject, handElement) {
+            const cardDiv = document.createElement('div');
+            cardDiv.classList.add('card');
+            const rankSpan = document.createElement('span');
+            rankSpan.classList.add('rank');
+            rankSpan.textContent = cardObject.rank;
+            const suitSpan = document.createElement('span');
+            suitSpan.classList.add('suit');
+            suitSpan.innerHTML = cardObject.suitHTML;
+
+            if (cardObject.color === 'red') cardDiv.classList.add('red')
+            else cardDiv.classList.add('black');
+
+            cardDiv.appendChild(rankSpan);
+            cardDiv.appendChild(suitSpan);
+            handElement.appendChild(cardDiv);
+        }
+       
+
+        alert("This is an HTML/CSS template for Baccarat. Game logic needs to be implemented in JavaScript!");
+
+    </script>
+</body>
+</html>

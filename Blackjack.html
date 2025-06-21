@@ -1,0 +1,1581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blackjack</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0d0d24; /* Dark blue background */
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      overflow: hidden; /* Prevent scrollbars */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh; /* Ensure it takes full viewport height */
+      position: relative;
+    }
+
+    /* Original sidebar for controls */
+    .sidebar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 280px; /* Width of the sidebar */
+      background-color: #1a1a3a; /* Same as table background */
+      padding: 20px;
+      box-shadow: 5px 0 15px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      align-items: center;
+      z-index: 20;
+    }
+
+    .game-container {
+      position: relative;
+      width: 90%; /* Adjust as needed */
+      max-width: 1200px; /* Max width for larger screens */
+      height: 600px; /* Fixed height for the table area */
+      background-color: #1a1a3a; /* Slightly lighter blue for the table */
+      border-radius: 50% / 30%; /* Oval shape for the table */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-around;
+      padding: 50px 0;
+      box-shadow: inset 0 0 50px rgba(0,0,0,0.5); /* Inner shadow for depth */
+      margin-left: 280px; /* Make space for the left sidebar */
+      /* No margin-right here, as the stats modal is floating */
+    }
+
+    .card-slot {
+      width: 80px;
+      height: 110px;
+      border: 2px dashed #444; /* Dashed border for card outline */
+      border-radius: 8px;
+      margin: 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #888;
+      background-color: rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease-in-out; /* Smooth transitions for card updates */
+      position: relative; /* For absolute positioning of card content */
+      overflow: hidden; /* Hide overflowing content during animation */
+    }
+
+    .card-content {
+      font-size: 20px;
+      font-weight: bold;
+      color: black;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .card-back {
+      background-color: purple;
+      border: 2px solid #555;
+      color: #fff;
+      font-size: 40px; /* Larger for the card back unicode */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dealer-area, .player-area {
+      display: flex;
+      justify-content: center;
+      position: absolute;
+    }
+
+    .dealer-area {
+      top: 100px;
+    }
+
+    .player-area {
+      bottom: 50px;
+      width: 100%;
+    }
+
+    #player-slot-3 {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      transform: translate(0px, 140px);
+    }
+
+    #player-total, #dealer-total {
+      position: absolute;
+      font-size: 22px;
+      font-weight: bold;
+      color: white;
+      background-color: rgba(0,0,0,0.5);
+      padding: 5px 10px;
+      border-radius: 5px;
+      min-width: 50px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    #player-total {
+      top: 130px;
+    }
+
+    #dealer-total {
+      top: -30px;
+    }
+
+    .sidebar h2 {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: white;
+    }
+
+    .sidebar .bet-control, .sidebar .game-control {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .sidebar .bet-buttons {
+        display: grid; /* Use grid for better layout control */
+        grid-template-columns: repeat(4, 1fr); /* 4 columns for 1/2x, 2x, Max */
+        gap: 5px; /* Smaller gap */
+        width: 100%; /* Take full width */
+    }
+
+    .sidebar .bet-button {
+      background-color: #333; /* Darker background for bet buttons */
+      border: 1px solid #555; /* Subtle border */
+      color: white;
+      font-weight: bold; /* Use font-weight instead of @apply */
+      padding: 8px 12px; /* Adjust padding for better look */
+      border-radius: 6px; /* Slightly less rounded */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+      font-size: 14px; /* Smaller text for compact buttons */
+      height: 36px; /* Fixed height for consistency */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer; /* Add pointer cursor */
+    }
+
+    .sidebar .bet-button:hover {
+        background-color: #555; /* Lighter on hover */
+    }
+
+    .sidebar .bet-button.selected {
+        background-color: #555; /* Retain selected state */
+        border-color: #eab308; /* Yellow border for selected */
+        color: #eab308; /* Yellow text for selected */
+    }
+
+    .sidebar .game-button {
+      background-color: #4a5568; /* bg-gray-700 */
+      color: white; /* text-white */
+      font-weight: bold; /* font-bold */
+      padding: 8px 16px; /* py-2 px-4 */
+      border-radius: 8px; /* rounded-lg */
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* shadow-md */
+      transition: background-color 0.3s ease, transform 0.3s ease; /* transition duration-300 ease-in-out */
+      width: 100%; /* w-full */
+    }
+
+    .sidebar .game-button:hover {
+      background-color: #2d3748; /* hover:bg-gray-800 */
+    }
+
+    .sidebar .start-game-button {
+        background-color: #ed8936; /* bg-yellow-500 */
+        color: white;
+    }
+    .sidebar .start-game-button:hover {
+        background-color: #dd6b20; /* hover:bg-yellow-600 */
+    }
+
+    .sidebar .bet-input-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        background-color: #2a2a2a; /* Darker background for input group */
+        border-radius: 8px; /* Rounded corners for the group */
+        padding: 5px; /* Padding inside the group */
+        border: 1px solid #444; /* Border for the input group */
+    }
+
+    #customBet { /* Changed ID from #customBetInput to #customBet */
+      background-color: #000; /* Changed to black */
+      color: #fff;
+      border: 1px solid #4a5568;
+      border-radius: 5px;
+      padding: 8px 12px;
+      font-size: 1em;
+      width: 80px; /* Shrunk width */
+      text-align: center;
+      margin-left: 10px; /* Keep this margin for spacing */
+    }
+
+    .sidebar .bet-input::-webkit-outer-spin-button,
+    .sidebar .bet-input::-webkit-inner-spin-button {
+        -webkit-appearance: none; /* Hide arrows for Chrome, Safari, Edge */
+        margin: 0; /* Remove margin */
+    }
+
+    #message {
+      bottom: 90px;
+      color: yellow;
+      font-weight: bold;
+      z-index: 10;
+      position: absolute;
+    }
+
+    /* Card Deck Styling */
+    #card-deck {
+      position: absolute;
+      top: 20px;
+      left: calc(280px + 20px); /* Adjust left position to be beside the sidebar */
+      width: 80px;
+      height: 110px;
+      background-color: #550055; /* Dark purple for the deck */
+      border: 2px solid #880088;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      color: white;
+      z-index: 50; /* Ensure it's above other elements */
+    }
+
+    /* Animation for dealing cards */
+    .animated-card {
+      position: absolute;
+      width: 80px;
+      height: 110px;
+      background-color: purple; /* Card back */
+      border: 2px solid #555;
+      border-radius: 8px;
+      z-index: 100; /* On top during animation */
+      transition: all 0.5s ease-in-out; /* Animation duration */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      color: white;
+    }
+
+    /* Message Box Styling */
+    .message-box {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: rgba(0, 0, 0, 0.9);
+        padding: 20px 30px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        color: white;
+        font-size: 22px;
+        text-align: center;
+        z-index: 1000;
+        display: none; /* Hidden by default */
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .message-box.show {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translate(-50%, -60%); }
+        to { opacity: 1; transform: translate(-50%, -50%); }
+    }
+
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translate(-50%, -50%); }
+        to { opacity: 0; transform: translate(-50%, -60%); }
+    }
+
+    .message-box .close-btn {
+        background-color: #2e8b57;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 15px;
+        font-size: 16px;
+    }
+
+    /* NEW: Styles for the movable stats modal from mines.html */
+    #liveStatsButton {
+        position: absolute;
+        top: 25px;
+        right: 250px; /* Adjust as needed to not overlap with coin display */
+        background-color: #4299e1; /* Blue */
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1em;
+        opacity: 0.7; /* A bit opaque */
+        transition: opacity 0.2s ease, background-color 0.2s ease;
+        z-index: 100; /* Ensure it's on top */
+    }
+
+    #liveStatsButton:hover {
+        opacity: 1;
+        background-color: #3182ce;
+    }
+
+    .modal-overlay {
+        /* This will be the movable window itself */
+        position: absolute; /* Changed from fixed to absolute */
+        display: block; /* Will be toggled with 'hidden' class */
+        z-index: 1000; /* Ensure it's on top */
+        background-color: #2d3748; /* Darker grey, same as modal-content before */
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        width: 90%; /* Keep this for responsiveness */
+        max-width: 300px; /* Make it narrower */
+        min-width: 250px; /* Prevent it from becoming too small */
+        max-height: 600px; /* Make it taller */
+        min-height: 350px; /* Ensure it has a decent height */
+        color: #e2e8f0;
+        text-align: center;
+        resize: both; /* Allows resizing the window */
+        overflow: auto; /* Adds scrollbars if content overflows */
+        cursor: grab; /* Indicates it's draggable */
+        /* Initial positioning - JavaScript will adjust this */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%); /* Center it initially */
+    }
+
+    .modal-content {
+        /* No longer needed as a separate container, its styles are merged into modal-overlay */
+        /* Keep this rule to override any lingering default styles if needed, but it won't be a separate draggable element */
+    }
+
+    .modal-close-button {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        background: none;
+        border: none;
+        font-size: 1.5em;
+        color: #e2e8f0;
+        cursor: pointer;
+        padding: 5px;
+    }
+    .modal-close-button:hover {
+        color: #4299e1;
+    }
+
+    .modal-content h2 {
+        color: #4299e1;
+        margin-bottom: 20px;
+        font-size: 2em;
+    }
+
+    #statsModalHeader {
+        cursor: grab; /* Explicitly make the header a grab handle */
+        margin-top: 0;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #4a5568; /* A subtle separator */
+        margin-bottom: 20px;
+    }
+
+    #profitChartContainer {
+        margin-bottom: 20px;
+        background-color: #1a202c; /* Chart background */
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    #betStats {
+        font-size: 1.2em;
+        margin-bottom: 20px;
+    }
+    #betStats span {
+        font-weight: bold;
+        color: #48bb78; /* Green for positive stats */
+    }
+
+    #resetStatsButton {
+        background-color: #e53e3e; /* Red */
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1em;
+        transition: background-color 0.2s ease;
+    }
+    #resetStatsButton:hover {
+        background-color: #c53030;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+        .sidebar {
+            width: 200px; /* Make sidebar a bit narrower */
+            padding: 10px;
+            gap: 15px;
+        }
+        #card-deck {
+            left: calc(200px + 20px); /* Adjust based on new sidebar width */
+        }
+        .game-container {
+            margin-left: 200px; /* Push game container to the right */
+            /* No margin-right for smaller screens when modal is floating */
+            width: calc(100% - 200px); /* Adjust width */
+        }
+        .sidebar .bet-button {
+            font-size: 12px;
+            height: 32px;
+            padding: 0 8px;
+        }
+        #customBet {
+            font-size: 1rem;
+        }
+        .sidebar h2 {
+            font-size: 20px;
+        }
+        #liveStatsButton {
+            right: 20px; /* Move closer to coin display on smaller screens */
+            top: 60px; /* Below coin display */
+        }
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+        justify-content: flex-start; /* Align to top for better mobile layout */
+        padding-top: 20px;
+      }
+      .coin-display {
+        position: relative; /* Make it flow with content */
+        top: auto;
+        right: auto;
+        margin-bottom: 20px; /* Add some space */
+      }
+      #liveStatsButton {
+        position: relative; /* Make it flow with content */
+        top: auto;
+        right: auto;
+        margin-bottom: 20px; /* Add some space */
+      }
+      .sidebar {
+        position: relative; /* Make sidebar flow with content */
+        width: 90%; /* Take more width on small screens */
+        max-width: 300px; /* Cap width for larger phones */
+        height: auto;
+        padding: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        border-radius: 12px; /* Rounded corners for the whole sidebar */
+        margin-bottom: 20px; /* Space below sidebar */
+      }
+      #card-deck {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin: 0 auto 20px auto; /* Center deck above game table */
+      }
+      .game-container {
+        height: 450px; /* Reduce table height */
+        width: 95%;
+        margin-left: 0; /* No margin-left for smaller screens */
+        margin-right: 0; /* No margin-right for smaller screens */
+        padding: 30px 0;
+      }
+      .dealer-area {
+        top: 40px;
+      }
+      .player-area {
+        bottom: 20px;
+      }
+      #player-slot-3 {
+        transform: translate(0px, 80px);
+      }
+      .card-slot {
+        width: 50px;
+        height: 70px;
+        margin: 0 3px;
+      }
+      .card-content {
+        font-size: 14px;
+      }
+      #player-total, #dealer-total {
+        font-size: 16px;
+      }
+      #player-total {
+        top: 90px;
+      }
+      #message {
+        font-size: 14px;
+        bottom: 50px;
+      }
+      .animated-card {
+        width: 50px;
+        height: 70px;
+        font-size: 25px;
+      }
+      .sidebar .bet-buttons {
+          grid-template-columns: repeat(2, 1fr); /* 2 columns for very small screens */
+      }
+      .sidebar .bet-input-group {
+          padding: 3px;
+      }
+      .modal-overlay { /* Adjust modal for smaller screens */
+        width: 95%;
+        max-width: 95%;
+        margin: auto; /* Center it */
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        resize: none; /* Disable resizing on small screens */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="coin-display absolute top-4 right-4 text-lg bg-gray-800 p-3 rounded-full cursor-pointer shadow-lg z-50" onclick="window.location.href='Buy_coins.html'">
+    Coins: <span id="coinCount">1000</span>
+  </div>
+  
+
+  <button id="liveStatsButton">Live Stats</button>
+
+  <div id="card-deck">
+    &#x1F0A0; </div>
+
+  <div class="sidebar">
+    <div class="bet-control">
+        <div class="flex items-center justify-between w-full">
+            <h2 class="text-xl font-bold">Play amount</h2>
+        </div>
+        <div class="bet-input-group">
+            <span class="text-lg">💰</span>
+            <input type="number" id="customBet" min="1" value="50" class="bet-input" placeholder="e.g., 75">
+        </div>
+        <div class="bet-buttons">
+            <button class="bet-button" data-bet="0.5x">1/2x</button>
+            <button class="bet-button" data-bet="2x">2x</button>
+            <button class="bet-button" data-bet="max">Max</button>
+        </div>
+    </div>
+
+    <div class="game-control w-full flex flex-col gap-2">
+        <button onclick="hit()" class="game-button" id="hitBtn">Hit</button>
+        <button onclick="stand()" class="game-button" id="standBtn">Stand</button>
+        <button onclick="doubleDown()" class="game-button" id="doubleBtn">Double</button>
+        <button onclick="split()" class="game-button" id="splitBtn" disabled>Split</button> <label class="inline-flex items-center mt-3 cursor-pointer">
+            <input type="checkbox" id="hintsToggle" class="sr-only peer">
+            <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span class="ms-3 text-sm font-medium text-white">Basic Strategy Hints</span>
+        </label>
+    </div>
+
+    <button onclick="startNewGame()" class="start-game-button" id="startGameBtn">Start new game</button>
+  </div>
+
+  <div class="game-container">
+    <div class="game-info text-xl font-bold bg-black bg-opacity-30 p-2 rounded-md mt-[-30px] mb-5">
+      <span class="block my-1">BLACKJACK PAYS 3 TO 2</span>
+      <span class="block my-1">INSURANCE PAYS 2 TO 1</span>
+    </div>
+
+    <div class="dealer-area">
+      <div id="dealer-total"></div>
+      <div id="dealer-card-1" class="card-slot"></div>
+      <div id="dealer-card-2" class="card-slot"></div>
+      <div id="dealer-card-3" class="card-slot"></div>
+      <div id="dealer-card-4" class="card-slot"></div>
+      <div id="dealer-card-5" class="card-slot"></div>
+    </div>
+
+    <div class="player-area">
+      <div id="player-slot-3">
+        <div id="player-total"></div>
+        <div id="player-card-3-1" class="card-slot"></div>
+        <div id="player-card-3-2" class="card-slot"></div>
+        <div id="player-card-3-3" class="card-slot"></div>
+        <div id="player-card-3-4" class="card-slot"></div>
+        <div id="player-card-3-5" class="card-slot"></div>
+      </div>
+    </div>
+
+    <p id="message"></p>
+  </div>
+
+  <div id="messageBox" class="message-box">
+      <p id="messageBoxText"></p>
+      <button class="close-btn" onclick="hideMessageBox()">OK</button>
+  </div>
+
+  <div id="statsModal" class="modal-overlay hidden">
+      <div class="modal-content">
+          <button class="modal-close-button" id="closeStatsModalButton">&times;</button>
+          <h2 id="statsModalHeader">Live Stats</h2>
+          <div id="profitChartContainer">
+              <canvas id="profitChart"></canvas>
+          </div>
+          <p id="betStats">
+              Games Played: <span id="statGamesPlayed">0</span><br>
+              Wins: <span id="statWins">0</span><br>
+              Losses: <span id="statLosses">0</span><br>
+              Win Rate: <span id="statWinRate">0.00%</span><br>
+              Total Wagered: <span id="statTotalWagered">$0</span><br>
+              Net Profit/Loss: <span id="statNetProfitLoss">$0</span><br>
+              Largest Win: <span id="statLargestWin">$0</span><br>
+              Largest Loss: <span id="statLargestLoss">$0</span>
+          </p>
+          <button id="resetStatsButton">Reset Stats</button>
+      </div>
+  </div>
+
+  <script>
+    const suits = ['♠', '♥', '♦', '♣'];
+    const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+    let deck = [], playerHand = [], dealerHand = [], gameOver = false, playerStood = false, doubled = false;
+    let coins = parseInt(localStorage.getItem('coins') || '1000');
+    let currentBet = 50; // Default starting bet, persistent
+
+    const coinCountDisplay = document.getElementById('coinCount');
+    const messageDisplay = document.getElementById('message');
+    const customBetInput = document.getElementById('customBet');
+    const betButtons = document.querySelectorAll('.bet-button');
+    const startGameBtn = document.getElementById('startGameBtn');
+
+    const hitBtn = document.getElementById('hitBtn');
+    const standBtn = document.getElementById('standBtn');
+    const doubleBtn = document.getElementById('doubleBtn');
+    const splitBtn = document.getElementById('splitBtn');
+    const hintsToggle = document.getElementById('hintsToggle');
+
+    const messageBox = document.getElementById('messageBox');
+    const messageBoxText = document.getElementById('messageBoxText');
+
+    // Stats variables - NEW (from mines.html)
+    let gameStats = {
+        totalGames: 0,
+        totalWins: 0,
+        totalLosses: 0,
+        totalWagered: 0,
+        netProfitLoss: 0,
+        largestWin: 0,
+        largestLoss: 0,
+    };
+    let profitHistory = JSON.parse(localStorage.getItem('blackjackProfitHistory')) || [0]; // Store profit after each game
+    // Ensure profitHistory values are floats and rounded
+    profitHistory = profitHistory.map(p => parseFloat(p.toFixed(2))); // Using toFixed(2) for currency
+
+    // References to stat display elements - NEW (from mines.html)
+    const liveStatsButton = document.getElementById('liveStatsButton');
+    const statsModal = document.getElementById('statsModal');
+    const closeStatsModalButton = document.getElementById('closeStatsModalButton');
+    const profitChartCanvas = document.getElementById('profitChart');
+    const statGamesPlayed = document.getElementById('statGamesPlayed');
+    const statWins = document.getElementById('statWins');
+    const statLosses = document.getElementById('statLosses');
+    const statWinRate = document.getElementById('statWinRate');
+    const statTotalWagered = document.getElementById('statTotalWagered');
+    const statNetProfitLoss = document.getElementById('statNetProfitLoss');
+    const statLargestWin = document.getElementById('statLargestWin');
+    const statLargestLoss = document.getElementById('statLargestLoss');
+    const resetStatsButton = document.getElementById('resetStatsButton');
+    const statsModalHeader = document.getElementById('statsModalHeader');
+
+    let profitChart; // Chart.js instance
+
+
+    // Basic Strategy Chart Data
+    const basicStrategy = {
+        'hard': {
+            8: { '2': 'H', '3': 'H', '4': 'H', '5': 'H', '6': 'H', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            9: { '2': 'H', '3': 'D', '4': 'D', '5': 'D', '6': 'D', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            10: { '2': 'D', '3': 'D', '4': 'D', '5': 'D', '6': 'D', '7': 'D', '8': 'D', '9': 'D', '10': 'H', 'A': 'H' },
+            11: { '2': 'D', '3': 'D', '4': 'D', '5': 'D', '6': 'D', '7': 'D', '8': 'D', '9': 'D', '10': 'D', 'A': 'D' },
+            12: { '2': 'H', '3': 'H', '4': 'S', '5': 'S', '6': 'S', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            13: { '2': 'S', '3': 'S', '4': 'S', '5': 'S', '6': 'S', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            14: { '2': 'S', '3': 'S', '4': 'S', '5': 'S', '6': 'S', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            15: { '2': 'S', '3': 'S', '4': 'S', '5': 'S', '6': 'S', '7': 'H', '8': 'H', '9': 'H', '10': 'S', 'A': 'H' }, // Adjusted for 10
+            16: { '2': 'S', '3': 'S', '4': 'S', '5': 'S', '6': 'S', '7': 'H', '8': 'H', '9': 'H', '10': 'S', 'A': 'H' }, // Adjusted for 10
+            17: { '2': 'S', '3': 'S', '4': 'S', '5': 'S', '6': 'S', '7': 'S', '8': 'S', '9': 'S', '10': 'S', 'A': 'S' }
+        },
+        'soft': {
+            'A,2': { '2': 'H', '3': 'H', '4': 'D', '5': 'D', '6': 'D', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            'A,3': { '2': 'H', '3': 'H', '4': 'D', '5': 'D', '6': 'D', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            'A,4': { '2': 'H', '3': 'H', '4': 'D', '5': 'D', '6': 'D', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            'A,5': { '2': 'H', '3': 'H', '4': 'D', '5': 'D', '6': 'D', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            'A,6': { '2': 'D', '3': 'D', '4': 'D', '5': 'D', '6': 'D', '7': 'S', '8': 'S', '9': 'H', '10': 'H', 'A': 'H' },
+            'A,7': { '2': 'S', '3': 'S', '4': 'S', '5': 'S', '6': 'S', '7': 'S', '8': 'S', '9': 'H', '10': 'H', 'A': 'H' },
+            'A,8': { '2': 'S', '3': 'S', '4': 'S', '5': 'S', '6': 'S', '7': 'S', '8': 'S', '9': 'S', '10': 'S', 'A': 'S' },
+            'A,9': { '2': 'S', '3': 'S', '4': 'S', '5': 'S', '6': 'S', '7': 'S', '8': 'S', '9': 'S', '10': 'S', 'A': 'S' }
+        },
+        'pair': {
+            'A,A': { '2': 'Y', '3': 'Y', '4': 'Y', '5': 'Y', '6': 'Y', '7': 'Y', '8': 'Y', '9': 'Y', '10': 'Y', 'A': 'Y' },
+            'T,T': { '2': 'N', '3': 'N', '4': 'N', '5': 'N', '6': 'N', '7': 'N', '8': 'N', '9': 'N', '10': 'N', 'A': 'N' },
+            '9,9': { '2': 'Y', '3': 'Y', '4': 'Y', '5': 'Y', '6': 'Y', '7': 'N', '8': 'Y', '9': 'Y', '10': 'N', 'A': 'N' },
+            '8,8': { '2': 'Y', '3': 'Y', '4': 'Y', '5': 'Y', '6': 'Y', '7': 'Y', '8': 'Y', '9': 'Y', '10': 'Y', 'A': 'Y' },
+            '7,7': { '2': 'Y', '3': 'Y', '4': 'Y', '5': 'Y', '6': 'Y', '7': 'Y', '8': 'N', '9': 'N', '10': 'N', 'A': 'N' },
+            '6,6': { '2': 'Y', '3': 'Y', '4': 'Y', '5': 'Y', '6': 'Y', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            '5,5': { '2': 'D', '3': 'D', '4': 'D', '5': 'D', '6': 'D', '7': 'D', '8': 'D', '9': 'D', '10': 'H', 'A': 'H' }, // This is actually 10, so should be hard 10
+            '4,4': { '2': 'H', '3': 'H', '4': 'H', '5': 'Y', '6': 'Y', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            '3,3': { '2': 'Y', '3': 'Y', '4': 'Y', '5': 'Y', '6': 'Y', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' },
+            '2,2': { '2': 'Y', '3': 'Y', '4': 'Y', '5': 'Y', '6': 'Y', '7': 'H', '8': 'H', '9': 'H', '10': 'H', 'A': 'H' }
+        },
+        'surrender': { // Assuming Surrender is only for Hard totals 15, 16 against 10 or A
+            15: { '10': 'SUR', 'A': 'H' }, // Chart shows H for A for 15.
+            16: { '10': 'SUR', 'A': 'H' }  // Chart shows H for A for 16.
+        }
+    };
+
+    // Function to show custom message box
+    function showMessageBox(message) {
+        messageBoxText.textContent = message;
+        messageBox.classList.add('show');
+    }
+
+    // Function to hide custom message box
+    function hideMessageBox() {
+        messageBox.classList.remove('show');
+    }
+
+    function createDeck() {
+      deck = [];
+      for (let suit of suits) {
+        for (let rank of ranks) {
+          deck.push({rank, suit});
+        }
+      }
+      deck.sort(() => Math.random() - 0.5);
+    }
+
+    function getCardValue(card) {
+      if (['J', 'Q', 'K'].includes(card.rank)) return 10;
+      if (card.rank === 'A') return 11;
+      return parseInt(card.rank);
+    }
+
+    function calculateHandValue(hand) {
+      let value = 0, aces = 0;
+      for (let card of hand) {
+        value += getCardValue(card);
+        if (card.rank === 'A') aces++;
+      }
+      while (value > 21 && aces > 0) {
+        value -= 10;
+        aces--;
+      }
+      return value;
+    }
+
+    function hasAce(hand) {
+        return hand.some(card => card.rank === 'A');
+    }
+
+    function isPair(hand) {
+        return hand.length === 2 && hand[0].rank === hand[1].rank;
+    }
+
+    function getPlayerHandKey(hand) {
+        const value = calculateHandValue(hand);
+        const ranks = hand.map(card => card.rank).sort(); // Sort to handle A,2 vs 2,A consistently
+
+        if (isPair(hand)) {
+            // For pairs, use the rank (e.g., 'A,A', 'T,T', '2,2')
+            if (ranks[0] === '10' || ['J', 'Q', 'K'].includes(ranks[0])) {
+                return 'T,T'; // Represent any two 10-value cards as T,T
+            }
+            return `${ranks[0]},${ranks[1]}`;
+        } else if (hasAce(hand) && value <= 21) {
+            // Soft totals (A,2 to A,9)
+            // Need to calculate the non-ace value to get the soft total key
+            let nonAceValue = 0;
+            let acesCount = 0;
+            for(let card of hand) {
+                if (card.rank === 'A') {
+                    acesCount++;
+                } else {
+                    nonAceValue += getCardValue(card);
+                }
+            }
+            // If there's more than one ace, subsequent aces count as 1
+            if (acesCount > 1) nonAceValue += (acesCount - 1);
+            
+            // The soft total is A + (non-ace value)
+            if (nonAceValue >= 2 && nonAceValue <= 9) {
+                return `A,${nonAceValue}`;
+            }
+        }
+        // Hard totals
+        return value.toString();
+    }
+
+    // Function to get dealer's upcard value as a string key
+    function getDealerUpcardKey(dealerHand) {
+        const upcard = dealerHand[0];
+        if (upcard.rank === 'A') return 'A';
+        if (['J', 'Q', 'K'].includes(upcard.rank)) return '10';
+        return upcard.rank;
+    }
+
+    function getBasicStrategyHint() {
+        if (playerHand.length < 2 || dealerHand.length < 1) return null; // Not enough cards to give hints
+
+        const playerValue = calculateHandValue(playerHand);
+        const dealerUpcard = getDealerUpcardKey(dealerHand);
+        const isPlayerPair = isPair(playerHand);
+        const hasSoftAce = hasAce(playerHand) && playerValue <= 21 && playerHand.length > 0 && playerHand.some(card => getCardValue(card) === 11);
+
+        let action = null;
+        let type = '';
+
+        // 1. Check for Surrender (if player has only 2 cards)
+        if (playerHand.length === 2) {
+            const surrenderAction = basicStrategy['surrender'][playerValue];
+            if (surrenderAction && surrenderAction[dealerUpcard] === 'SUR') {
+                return 'SUR';
+            }
+        }
+
+        // 2. Check for Pairs (if player has only 2 cards)
+        if (isPlayerPair) {
+            const playerKey = getPlayerHandKey(playerHand); // Will be like 'A,A', '8,8', 'T,T' etc.
+            if (basicStrategy['pair'][playerKey]) {
+                action = basicStrategy['pair'][playerKey][dealerUpcard];
+                if (action === 'Y') return 'SPLIT';
+                // If the pair strategy says 'N', it means don't split, so fall through to hard/soft logic
+                // If it's a 5,5 pair, it's treated as hard 10.
+                if (playerKey === '5,5') {
+                    // Fall through to hard 10 logic
+                } else if (action === 'N') {
+                    // Fall through to hard/soft logic based on value
+                }
+            }
+        }
+
+        // 3. Check for Soft Totals (if player has an Ace and value is not hard)
+        if (hasSoftAce) {
+            const playerKey = getPlayerHandKey(playerHand); // Will be like 'A,2', 'A,7' etc.
+            if (basicStrategy['soft'][playerKey]) {
+                action = basicStrategy['soft'][playerKey][dealerUpcard];
+                // D/Ds mean Double if allowed, else Hit/Stand. For now, assume always allowed for hint.
+                if (action === 'Ds' || action === 'D') return 'DOUBLE';
+                if (action === 'H') return 'HIT';
+                if (action === 'S') return 'STAND';
+            }
+        }
+
+        // 4. Check for Hard Totals
+        // This will also catch cases where a pair or soft total was resolved to a hard total action
+        if (playerValue >= 8 && playerValue <= 17) { // Strategy chart only goes up to 17 for hard totals
+            action = basicStrategy['hard'][playerValue];
+            if (action) {
+                action = action[dealerUpcard];
+                if (action === 'D') return 'DOUBLE';
+                if (action === 'H') return 'HIT';
+                if (action === 'S') return 'STAND';
+            }
+        }
+
+        // Default actions for values outside the explicit chart or if no specific rule applies
+        if (playerValue >= 17) return 'STAND';
+        if (playerValue <= 11) return 'HIT'; // All 8-11 are Hit/Double, below 8 is always Hit
+
+        return null; // Should not happen if chart is comprehensive
+    }
+
+    function applyHintStyling(hint) {
+        // Remove all previous hint classes
+        [hitBtn, standBtn, doubleBtn, splitBtn].forEach(btn => {
+            btn.classList.remove('hint-hit', 'hint-stand', 'hint-double', 'hint-split', 'hint-surrender');
+        });
+
+        if (!hint || !hintsToggle.checked) {
+            return; // No hint or hints are toggled off
+        }
+
+        // Apply hint class
+        switch (hint) {
+            case 'HIT':
+                hitBtn.classList.add('hint-hit');
+                break;
+            case 'STAND':
+                standBtn.classList.add('hint-stand');
+                break;
+            case 'DOUBLE':
+                doubleBtn.classList.add('hint-double');
+                break;
+            case 'SPLIT':
+                splitBtn.classList.add('hint-split');
+                break;
+            case 'SUR': // Surrender hint
+                // If Surrender button existed, add class to it. For now, highlight hit/stand if surrender is not clickable.
+                // Since we don't have a surrender button, we might just display a text hint.
+                // Or, we can highlight stand as the alternative if surrender is not taken.
+                // For now, let's just make a note. The prompt asks to highlight buttons.
+                // The current UI doesn't have a Surrender button, so we can't highlight it.
+                // For now, this hint won't be visually applied to a button.
+                // This would be a place to suggest "Surrender" as text if desired.
+                break;
+        }
+    }
+
+
+    // Function to show custom message box
+    function showMessageBox(message) {
+        messageBoxText.textContent = message;
+        messageBox.classList.add('show');
+    }
+
+    // Function to hide custom message box
+    function hideMessageBox() {
+        messageBox.classList.remove('show');
+    }
+
+    function createDeck() {
+      deck = [];
+      for (let suit of suits) {
+        for (let rank of ranks) {
+          deck.push({rank, suit});
+        }
+      }
+      deck.sort(() => Math.random() - 0.5);
+    }
+
+    // This function is already defined above, but keeping it here for clarity if it's moved later
+    // function getCardValue(card) { ... }
+
+    // This function is already defined above, but keeping it here for clarity if it's moved later
+    // function calculateHandValue(hand) { ... }
+
+    // Function to animate card dealing
+    function animateDealCard(card, targetElementId, isHoleCard = false) {
+        return new Promise(resolve => {
+            const deckElement = document.getElementById('card-deck');
+            const targetElement = document.getElementById(targetElementId);
+
+            if (!deckElement || !targetElement) {
+                console.error('Deck or target element not found for animation.');
+                resolve();
+                return;
+            }
+
+            // Get positions relative to the body
+            const deckRect = deckElement.getBoundingClientRect();
+            const targetRect = targetElement.getBoundingClientRect();
+
+            // Create animated card element
+            const animatedCard = document.createElement('div');
+            animatedCard.classList.add('animated-card');
+            animatedCard.innerHTML = '&#x1F0A0;'; // Card back Unicode
+
+            // Set initial position to deck
+            animatedCard.style.left = `${deckRect.left}px`;
+            animatedCard.style.top = `${deckRect.top}px`;
+            animatedCard.style.transform = 'translate(-50%, -50%)'; // Center for animation
+
+            document.body.appendChild(animatedCard);
+
+            // Force reflow for transition to work
+            animatedCard.offsetWidth;
+
+            // Set final position to target slot
+            animatedCard.style.left = `${targetRect.left + targetRect.width / 2}px`;
+            animatedCard.style.top = `${targetRect.top + targetRect.height / 2}px`;
+
+            // On transition end, update the actual card slot and remove animated card
+            animatedCard.addEventListener('transitionend', () => {
+                if (isHoleCard) {
+                    targetElement.classList.add('card-back');
+                } else {
+                    targetElement.textContent = `${card.rank}${card.suit}`;
+                    targetElement.style.border = '2px solid #fff';
+                    targetElement.style.backgroundColor = '#fff';
+                    targetElement.style.color = '#000';
+                }
+                document.body.removeChild(animatedCard);
+                resolve();
+            }, { once: true });
+        });
+    }
+
+    async function dealCard(hand, targetElementId, isHoleCard = false) {
+      const card = deck.pop();
+      hand.push(card);
+      await animateDealCard(card, targetElementId, isHoleCard);
+    }
+
+    function renderHands(showDealerTotal = false) {
+        // Clear previous cards first and reset styles for ALL card slots
+        document.querySelectorAll('.card-slot').forEach(slot => {
+            slot.textContent = ''; // Clear text
+            slot.style.border = '2px dashed #444'; // Reset border
+            slot.style.backgroundColor = 'rgba(0, 0, 0, 0.1)'; // Reset background
+            slot.style.color = '#888'; // Reset text color
+            slot.style.boxShadow = 'none'; // Clear shadow
+            slot.style.transform = 'none'; // Reset rotation
+            slot.style.marginLeft = '10px'; // Reset margin for player cards
+            slot.classList.remove('card-back'); // Remove card back class
+        });
+
+        // Render dealer's hand
+        for (let i = 0; i < dealerHand.length; i++) {
+            const cardSlot = document.getElementById(`dealer-card-${i + 1}`);
+            if (cardSlot) {
+                if (i === 1 && !showDealerTotal) { // If it's the second card (hole card) and game is active
+                    cardSlot.classList.add('card-back');
+                    cardSlot.innerHTML = '&#x1F0A0;'; // Card back Unicode
+                } else {
+                    cardSlot.classList.remove('card-back');
+                    cardSlot.textContent = `${dealerHand[i].rank}${dealerHand[i].suit}`;
+                    cardSlot.style.border = '2px solid #fff';
+                    cardSlot.style.backgroundColor = '#fff';
+                    cardSlot.style.color = '#000';
+                }
+            }
+        }
+
+        // Render player's hand (assuming single player in slot 3)
+        for (let i = 0; i < playerHand.length; i++) {
+            const cardSlot = document.getElementById(`player-card-3-${i + 1}`);
+            if (cardSlot) {
+                cardSlot.textContent = `${playerHand[i].rank}${playerHand[i].suit}`;
+                cardSlot.style.border = '2px solid #fff';
+                cardSlot.style.backgroundColor = '#fff';
+                cardSlot.style.color = '#000';
+
+                // Apply diagonal styling
+                const rotationAngle = (i - (playerHand.length - 1) / 2) * 5; // Rotate from -10 to +10 degrees
+                cardSlot.style.transform = `rotate(${rotationAngle}deg)`;
+                if (i > 0) {
+                    cardSlot.style.marginLeft = '-40px'; // Overlap cards
+                } else {
+                    cardSlot.style.marginLeft = '0px'; // First card has no negative margin
+                }
+
+                if (doubled) {
+                    cardSlot.style.border = '3px solid gold';
+                    cardSlot.style.boxShadow = '0 0 10px gold';
+                }
+            }
+        }
+
+        // Update totals
+        const playerTotal = calculateHandValue(playerHand);
+        document.getElementById('player-total').textContent = `Total: ${playerTotal}`;
+
+        // Dealer's total is shown based on the showDealerTotal flag
+        if (showDealerTotal) {
+            const dealerTotal = calculateHandValue(dealerHand);
+            document.getElementById('dealer-total').textContent = `Total: ${dealerTotal}`;
+        } else {
+            // Only show dealer's upcard value during play
+            const dealerUpcardValue = dealerHand.length > 0 ? getCardValue(dealerHand[0]) : 0;
+            document.getElementById('dealer-total').textContent = `Up: ${dealerUpcardValue}`;
+        }
+
+        if (hintsToggle.checked && !gameOver && playerHand.length >= 2 && dealerHand.length >= 1) {
+            applyHintStyling(getBasicStrategyHint());
+        } else {
+            applyHintStyling(null); // Clear hints if game is over or hints are off
+        }
+    }
+
+    function updateCoinDisplay() {
+      coinCountDisplay.textContent = coins;
+      localStorage.setItem('coins', coins); // Save coins to localStorage
+    }
+
+    function updateBetAmount(amount) {
+        if (amount === '0.5x') {
+            currentBet = Math.floor(currentBet / 2);
+        } else if (amount === '2x') {
+            currentBet = currentBet * 2;
+        } else if (amount === 'max') {
+            currentBet = coins;
+        } else {
+            currentBet = amount;
+        }
+
+        // Ensure bet is at least 1 and not more than coins
+        currentBet = Math.max(1, Math.min(currentBet, coins));
+        customBetInput.value = currentBet;
+        highlightSelectedBetButton();
+    }
+
+    function highlightSelectedBetButton() {
+        betButtons.forEach(button => {
+            button.classList.remove('selected');
+        });
+    }
+
+    // --- Stats Functions - NEW (adapted from mines.html) ---
+    function loadStats() {
+        const storedStats = localStorage.getItem('blackjackStats');
+        if (storedStats) {
+            gameStats = JSON.parse(storedStats);
+        }
+        profitHistory = JSON.parse(localStorage.getItem('blackjackProfitHistory')) || [0];
+        profitHistory = profitHistory.map(p => parseFloat(p.toFixed(2))); // Ensure values are floats and rounded
+        updateStatsDisplay();
+    }
+
+    function saveStats() {
+        localStorage.setItem('blackjackStats', JSON.stringify(gameStats));
+        localStorage.setItem('blackjackProfitHistory', JSON.stringify(profitHistory));
+    }
+
+    function updateStatsDisplay() {
+        statGamesPlayed.textContent = gameStats.totalGames;
+        statWins.textContent = gameStats.totalWins;
+        statLosses.textContent = gameStats.totalLosses;
+
+        const winRate = gameStats.totalGames > 0 ? (gameStats.totalWins / gameStats.totalGames * 100).toFixed(2) : '0.00';
+        statWinRate.textContent = `${winRate}%`;
+
+        statTotalWagered.textContent = `$${gameStats.totalWagered.toFixed(2)}`;
+        statNetProfitLoss.textContent = `$${gameStats.netProfitLoss.toFixed(2)}`;
+        statNetProfitLoss.style.color = gameStats.netProfitLoss >= 0 ? '#48bb78' : '#e53e3e'; /* Green for profit, red for loss */
+
+        statLargestWin.textContent = `$${gameStats.largestWin.toFixed(2)}`;
+        statLargestLoss.textContent = `$${gameStats.largestLoss.toFixed(2)}`;
+        
+        if (profitChart) {
+            renderProfitChart(); // Re-render chart to reflect new data
+        }
+    }
+
+    function renderProfitChart() {
+        if (profitChart) {
+            profitChart.destroy(); // Destroy existing chart before creating a new one
+        }
+
+        const ctx = profitChartCanvas.getContext('2d');
+        profitChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: profitHistory.map((_, i) => ''), // Empty labels for cleaner look
+                datasets: [{
+                    label: 'Profit/Loss',
+                    data: profitHistory,
+                    borderColor: '#4299e1',
+                    backgroundColor: (context) => {
+                        const gradient = ctx.createLinearGradient(0, 0, 0, profitChartCanvas.height);
+                        gradient.addColorStop(0, 'rgba(66, 153, 225, 0.4)');
+                        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                        return gradient;
+                    },
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 0,
+                    borderWidth: 2,
+                    segment: {
+                        borderColor: (ctx) => {
+                            const y0 = ctx.p0.parsed.y;
+                            const y1 = ctx.p1.parsed.y;
+                            if ((y0 >= 0 && y1 >= 0) || (y0 < 0 && y1 >= 0)) {
+                                return '#48bb78'; // Green
+                            } else if ((y0 <= 0 && y1 <= 0) || (y0 >= 0 && y1 < 0)) {
+                                return '#e53e3e'; // Red
+                            }
+                            return '#4299e1';
+                        },
+                        backgroundColor: (ctx) => {
+                            const y0 = ctx.p0.parsed.y;
+                            const y1 = ctx.p1.parsed.y;
+                            const gradient = ctx.chart.ctx.createLinearGradient(0, 0, 0, ctx.chart.height);
+
+                            if ((y0 >= 0 && y1 >= 0) || (y0 < 0 && y1 >= 0)) {
+                                gradient.addColorStop(0, 'rgba(72, 187, 120, 0.4)'); // Green fill
+                                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                            } else if ((y0 <= 0 && y1 <= 0) || (y0 >= 0 && y1 < 0)) {
+                                gradient.addColorStop(0, 'rgba(229, 62, 62, 0.4)'); // Red fill
+                                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                            } else {
+                                gradient.addColorStop(0, 'rgba(66, 153, 225, 0.4)');
+                                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                            }
+                            return gradient;
+                        }
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        display: false,
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: '#4a5568',
+                            drawBorder: false
+                        },
+                        ticks: {
+                            color: '#e2e8f0',
+                            beginAtZero: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: true
+                    }
+                }
+            }
+        });
+    }
+
+    // Draggable Window Functionality for Stats Modal - NEW (from mines.html)
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    statsModalHeader.addEventListener('mousedown', (e) => {
+        if (e.button === 0) { // Only left click
+            isDragging = true;
+            statsModal.style.cursor = 'grabbing';
+            // Calculate offset relative to the modal's current position
+            const rect = statsModal.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            statsModal.style.transition = 'none'; // Disable transition during drag
+        }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+
+        // Calculate new position relative to the viewport
+        let newLeft = e.clientX - offsetX;
+        let newTop = e.clientY - offsetY;
+
+        // Optional: Boundary checks (e.g., keep within viewport)
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const modalWidth = statsModal.offsetWidth;
+        const modalHeight = statsModal.offsetHeight;
+
+        if (newLeft < 0) newLeft = 0;
+        if (newTop < 0) newTop = 0;
+        if (newLeft + modalWidth > viewportWidth) newLeft = viewportWidth - modalWidth;
+        if (newTop + modalHeight > viewportHeight) newTop = viewportHeight - modalHeight;
+
+        // Apply new position
+        statsModal.style.left = `${newLeft}px`;
+        statsModal.style.top = `${newTop}px`;
+        statsModal.style.transform = 'none'; // Remove transform to allow direct top/left positioning
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        statsModal.style.cursor = 'grab';
+        statsModal.style.transition = ''; // Re-enable transition after drag
+    });
+    // --- End Stats Functions ---
+
+    async function startNewGame() {
+        let bet = parseInt(customBetInput.value);
+
+        if (bet <= 0 || isNaN(bet)) {
+            showMessageBox('Please enter a valid bet amount.');
+            return;
+        }
+        if (bet > coins) {
+            showMessageBox('You do not have enough coins for this bet!');
+            return;
+        }
+
+        // Update stats for new game - NEW
+        gameStats.totalGames++;
+        gameStats.totalWagered += bet;
+        saveStats(); // Save stats immediately after updating
+        updateStatsDisplay(); // Update display immediately
+
+        currentBet = bet;
+        coins -= currentBet;
+        updateCoinDisplay();
+        showMessageBox(`Bet placed: ${currentBet} coins. Good luck!`);
+
+        // Reset game state
+        createDeck();
+        playerHand = [];
+        dealerHand = [];
+        gameOver = false;
+        playerStood = false;
+        doubled = false;
+        messageDisplay.textContent = '';
+        enableGameControls(true);
+        startGameBtn.disabled = true; // Disable start game button during play
+        applyHintStyling(null); // Clear hints at start of new game
+
+        // Initial deal with animations
+        await dealCard(playerHand, 'player-card-3-1');
+        await dealCard(dealerHand, 'dealer-card-1'); // Dealer's first card (upcard)
+        await dealCard(playerHand, 'player-card-3-2');
+        await dealCard(dealerHand, 'dealer-card-2', true); // Dealer's second card (hole card)
+
+        renderHands(false); // Render initial hands, hide dealer's total
+
+        let playerTotal = calculateHandValue(playerHand);
+        if (playerTotal === 21 && playerHand.length === 2) {
+            messageDisplay.textContent = 'Blackjack! You win!';
+            coins += currentBet * 2.5; // Blackjack pays 3 to 2 (1.5x bet + original bet = 2.5x)
+            
+            // Update stats for Blackjack win - NEW
+            gameStats.totalWins++;
+            const winAmount = currentBet * 1.5; // Profit from Blackjack
+            gameStats.netProfitLoss = parseFloat((gameStats.netProfitLoss + winAmount).toFixed(2));
+            gameStats.largestWin = Math.max(gameStats.largestWin, winAmount);
+            
+            gameOver = true;
+            resolveGame(); // Auto-resolve if player has blackjack
+        }
+        updateCoinDisplay();
+        if (!gameOver) {
+            applyHintStyling(getBasicStrategyHint()); // Apply hints after initial deal
+        }
+    }
+
+    async function hit() {
+      if (gameOver || playerStood) return;
+      enableGameControls(false); // Disable controls during animation
+      await dealCard(playerHand, `player-card-3-${playerHand.length + 1}`);
+      renderHands(false); // Update hands, still hide dealer's total
+      let playerTotal = calculateHandValue(playerHand);
+      if (playerTotal > 21) {
+        messageDisplay.textContent = 'You bust! Dealer wins!';
+        
+        // Update stats for bust - NEW
+        gameStats.totalLosses++;
+        const lossAmount = currentBet;
+        gameStats.netProfitLoss = parseFloat((gameStats.netProfitLoss - lossAmount).toFixed(2));
+        gameStats.largestLoss = Math.max(gameStats.largestLoss, lossAmount);
+
+        gameOver = true;
+        resolveGame(); // Auto-resolve on bust
+      } else if (playerHand.length === 5 && playerTotal <= 21) { // 5-card charlie rule
+        messageDisplay.textContent = '5-Card Charlie! You win!';
+        coins += currentBet * 2; // Win double for 5-card charlie
+
+        // Update stats for 5-card Charlie win - NEW
+        gameStats.totalWins++;
+        const winAmount = currentBet; // Profit from 5-card charlie (original bet returned + 1x bet)
+        gameStats.netProfitLoss = parseFloat((gameStats.netProfitLoss + winAmount).toFixed(2));
+        gameStats.largestWin = Math.max(gameStats.largestWin, winAmount);
+
+        gameOver = true;
+        resolveGame();
+      }
+      updateCoinDisplay();
+      if (!gameOver) {
+        enableGameControls(true); // Re-enable if game not over
+        applyHintStyling(getBasicStrategyHint()); // Re-apply hints after hit
+      }
+    }
+
+    async function doubleDown() {
+      if (gameOver || playerHand.length !== 2 || coins < currentBet) { // Can only double on initial two cards and if enough coins
+          showMessageBox('Cannot double down now or not enough coins!');
+          return;
+      }
+      coins -= currentBet; // Deduct double bet
+      currentBet *= 2; // Double the current bet for payout calculation
+      doubled = true;
+      playerStood = true; // Automatically stand after doubling
+      updateCoinDisplay();
+      enableGameControls(false); // Disable controls during animation
+      await dealCard(playerHand, `player-card-3-${playerHand.length + 1}`);
+      renderHands(false); // Render after double, but dealer's hole card still hidden
+      resolveGame();
+    }
+
+    function stand() {
+      if (gameOver) return;
+      playerStood = true;
+      enableGameControls(false); // Disable controls during dealer's turn
+      applyHintStyling(null); // Clear hints when standing
+      resolveGame();
+    }
+
+    function split() {
+        showMessageBox("Split functionality is not yet implemented.");
+    }
+
+    async function resolveGame() {
+      // Reveal dealer's hole card and show full total
+      renderHands(true); // Call renderHands with true to show dealer's full hand and total
+
+      while (calculateHandValue(dealerHand) < 17) {
+        await dealCard(dealerHand, `dealer-card-${dealerHand.length + 1}`);
+        renderHands(true); // Re-render to update dealer's displayed cards and total
+      }
+      // Re-render one last time to ensure all visuals are correct after dealer's turn
+      renderHands(true);
+
+      const playerTotal = calculateHandValue(playerHand);
+      const dealerTotal = calculateHandValue(dealerHand);
+      let message = '';
+      let roundProfitLoss = 0;
+
+      // Determine outcome and update stats - NEW
+      if (playerTotal > 21) {
+        message = 'You bust! Dealer wins!';
+        gameStats.totalLosses++;
+        roundProfitLoss = -currentBet;
+      } else if (dealerTotal > 21) {
+        message = 'Dealer busts! You win!';
+        coins += currentBet * 2; // Win double the bet
+        gameStats.totalWins++;
+        roundProfitLoss = currentBet;
+      } else if (playerTotal > dealerTotal) {
+        message = 'You win!';
+        coins += currentBet * 2; // Win double the bet
+        gameStats.totalWins++;
+        roundProfitLoss = currentBet;
+      } else if (playerTotal < dealerTotal) {
+        message = 'Dealer wins!';
+        gameStats.totalLosses++;
+        roundProfitLoss = -currentBet;
+      } else {
+        message = 'Push!'; // No change in coins for a push
+        // For a push, the bet is returned, so profit/loss is 0 for this round
+        roundProfitLoss = 0;
+        coins += currentBet; // Return the bet for a push
+      }
+
+      // Update net profit/loss and largest win/loss - NEW
+      gameStats.netProfitLoss = parseFloat((gameStats.netProfitLoss + roundProfitLoss).toFixed(2));
+      if (roundProfitLoss > 0) {
+          gameStats.largestWin = Math.max(gameStats.largestWin, roundProfitLoss);
+      } else if (roundProfitLoss < 0) {
+          gameStats.largestLoss = Math.max(gameStats.largestLoss, Math.abs(roundProfitLoss));
+      }
+      
+      // Push current net profit/loss to history - NEW
+      profitHistory.push(gameStats.netProfitLoss);
+
+      messageDisplay.textContent = message;
+      gameOver = true;
+      updateCoinDisplay();
+      saveStats(); // Save stats after game resolution
+      updateStatsDisplay(); // Update display after game resolution
+
+      enableGameControls(false); // Disable game controls after round ends
+      startGameBtn.disabled = false; // Enable Start New Game button
+      applyHintStyling(null); // Clear hints when game ends
+    }
+
+    function enableGameControls(enable) {
+        hitBtn.disabled = !enable;
+        standBtn.disabled = !enable;
+        // Double and Split are only available on the first move (2 cards)
+        doubleBtn.disabled = !enable || playerHand.length !== 2;
+        splitBtn.disabled = !enable || !isPair(playerHand); // Split disabled unless it's a pair
+    }
+
+    // Event listener for bet buttons
+    betButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            updateBetAmount(button.dataset.bet);
+        });
+    });
+
+    // Event listener for custom bet input
+    customBetInput.addEventListener('input', () => {
+        const value = parseInt(customBetInput.value);
+        if (!isNaN(value) && value > 0) {
+            currentBet = value;
+            highlightSelectedBetButton(); // Remove highlight from other buttons
+        } else if (customBetInput.value === '') {
+            currentBet = 0; // Allow clearing the input without breaking
+            highlightSelectedBetButton();
+        }
+    });
+
+    // Event listener for hints toggle
+    hintsToggle.addEventListener('change', () => {
+        if (hintsToggle.checked && !gameOver && playerHand.length >= 2 && dealerHand.length >= 1) {
+            applyHintStyling(getBasicStrategyHint());
+        } else {
+            applyHintStyling(null); // Clear hints when toggle is off or game state isn't ready
+        }
+    });
+
+    // Live Stats Modal Event Listeners - NEW
+    liveStatsButton.addEventListener('click', () => {
+        statsModal.classList.remove('hidden');
+        renderProfitChart(); // Render chart when modal is opened
+        updateStatsDisplay(); // Update stats when modal is opened
+    });
+
+    closeStatsModalButton.addEventListener('click', () => {
+        statsModal.classList.add('hidden');
+    });
+
+    resetStatsButton.addEventListener('click', () => {
+        gameStats = {
+            totalGames: 0,
+            totalWins: 0,
+            totalLosses: 0,
+            totalWagered: 0,
+            netProfitLoss: 0,
+            largestWin: 0,
+            largestLoss: 0,
+        };
+        profitHistory = [0];
+        saveStats();
+        updateStatsDisplay();
+        renderProfitChart();
+        showMessageBox("Stats reset! 📊");
+    });
+
+
+    // Initialize the game state on page load
+    window.onload = () => {
+        updateCoinDisplay();
+        loadStats(); // Load stats on page load - NEW
+        // Set initial custom bet input value to the default currentBet
+        customBetInput.value = currentBet;
+        highlightSelectedBetButton();
+        enableGameControls(false); // Initially disable game action buttons
+        startGameBtn.disabled = false; // Enable Start New Game button
+    };
+  </script>
+</body>
+</html>

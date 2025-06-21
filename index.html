@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+    <link rel="stylesheet" href="styles.css">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betsy | Online Casino </title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px;
+            background-color: #1a202c;
+            color: #e5e5e5;
+        }
+        .coin-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.2em;
+            background-color: #4a5568;
+            color: #f4ffff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        h1 {
+            color: #4299e1;
+            text-align: center;
+            margin-top: 50px;
+        }
+        .game-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px; 
+    flex-wrap: wrap;
+    margin-top: 30px;
+    padding: 10px 0;
+}
+        .game-links a {
+        display: inline-block;
+        vertical-align: middle;
+        color: white;
+        padding: 3px 3px;
+        margin: 0px;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: 1.1em;
+        transition: background-color 0.2s ease, transform 0.1s ease;
+        border: none;
+        box-shadow: none;
+        }
+        .game-links a:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .game-links a:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="coin-display" onclick="window.location.href='Buy_coins.html'">
+        Coins: <span id="coinCount"></span>
+    </div>
+
+    <img src="Betsy.png" alt="Betsy" style="width: 50px; height: auto; display: block; border-radius: 10px;">
+
+   <div class="game-links">
+  <a href="Blackjack.html"><img src="Blackjack.png" alt="Blackjack" style="width: 150px; height: auto; display: block; border-radius: 10px;"></a></a>
+ <a href="mines.html"><img src="Mines.png" alt="Mines" style="width: 150px; height: auto; display: block; border-radius: 10px;"></a>
+ <a href="roulette.html">Roulette</a>
+  <a href="flip.html"><img src="Flip.png" alt="Flip" style="width: 150px; height: auto; display: block; border-radius: 10px;"></a>
+    <a href="hilo.html"><img src="Hilo.png" alt="High-Low" style="width: 150px; height: auto; display: block; border-radius: 10px;"></a>
+    <a href="index.html"><img src="Coming_Soon.png" alt="Slot Machine" style="width: 150px; height: auto; display: block; border-radius: 10px;"></a>
+    <a href="limbo.html"><img src="Limbo.png" alt="Limbo" style="width: 150px; height: auto; display: block; border-radius: 10px;"></a>
+</div>
+
+
+
+    <script>
+        // Function to update the coin display
+        function updateCoinDisplay() {
+            let coins = parseInt(localStorage.getItem('coins') || '1000'); // Default to 1000 if not found
+            document.getElementById('coinCount').textContent = coins;
+        }
+
+        // Call the function when the page loads
+        window.onload = updateCoinDisplay;
+    </script>
+</body>
+</html>
