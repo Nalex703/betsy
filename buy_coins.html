@@ -81,25 +81,37 @@
 <body>
     <div class="container">
         <h1>Buy More Coins</h1>
-        <p>Click the button below to reveal the crypto address for coin purchases.</p>
-        <button id="showAddressBtn">Show Crypto Address</button>
-        <p id="cryptoAddress">0x4D7AAD03B04aBa7258973Fa4fb1714Dd373Fbc65</p>
         <button class="back-button" onclick="window.history.back()">Go Back</button>
     </div>
 
-    <script>
-        const showAddressBtn = document.getElementById('showAddressBtn');
-        const cryptoAddressEl = document.getElementById('cryptoAddress');
+    <iframe src="https://nowpayments.io/embeds/payment-widget?iid=5991077007" width="410" height="696" frameborder="0" scrolling="no" style="overflow-y: hidden;">
+   Can't load widget
+</iframe>
 
-        showAddressBtn.addEventListener('click', () => {
-            if (cryptoAddressEl.style.display === 'none' || cryptoAddressEl.style.display === '') {
-                cryptoAddressEl.style.display = 'block'; // Show the address
-                showAddressBtn.textContent = 'Hide Crypto Address'; // Change button text
-            } else {
-                cryptoAddressEl.style.display = 'none'; // Hide the address
-                showAddressBtn.textContent = 'Show Crypto Address'; // Change button text
-            }
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+    <script>
+      // Initialize Firebase (add your config here)
+      // const firebaseConfig = { ... };
+      // firebase.initializeApp(firebaseConfig);
+
+      const db = firebase.firestore();
+      const auth = firebase.auth();
+
+      document.getElementById('showAddressBtn').addEventListener('click', function() {
+          document.getElementById('cryptoAddress').style.display = 'block';
+      });
+
+      if (auth.currentUser) {
+        // Listen for real-time updates to the user's 'coins' field
+        db.collection("users").doc(auth.currentUser.uid).onSnapshot((docSnap) => {
+          if (docSnap.exists) {
+            const userCoins = docSnap.data().coins || 0;
+            console.log("Current Coins:", userCoins);
+          }
         });
+      }
     </script>
 </body>
 </html>
